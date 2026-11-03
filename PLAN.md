@@ -2,7 +2,7 @@
 
 **Window:** Nov 2 to Dec 2, 2026
 
-**Status:** Week 1 in progress (last updated Nov 2, 2026)
+**Status:** Week 1 in progress (last updated Nov 3, 2026)
 
 **Approach:** minimize effort and maximize demo impact. Anything that doesn't
 support the demo video or a stated requirement in the posting is a candidate to
@@ -161,6 +161,9 @@ Open questions:
   pull-up resistors.
 - [x] I2C IMU (owned), wired to the Pi 5 only for the optional kernel driver. 3.3 V
   logic only.
+- [ ] One red LED, one green LED and two series resistors, to show which firmware
+  version is running. They use two spare general-purpose outputs on the Discovery
+  board (check UM1907).
 - [ ] A cheap logic analyzer (8-channel Saleae clone).
 - [x] CAN transceivers and CANopen IO module (owned). Still needs: two
   reachable CAN pins on the Discovery board (check UM1907), 120 ohm terminators
@@ -168,8 +171,11 @@ Open questions:
 
 ### Software and tools (all free)
 
-- VS Code as the main editor, with CMake and Ninja, the Arm GNU Toolchain
-  (arm-none-eabi), and STM32CubeMX for pin, clock and code generation.
+- VS Code as the main editor, with GNU Make, Ubuntu's `gcc-arm-none-eabi` compiler,
+  and STM32CubeMX for pin, clock and code generation.
+- `tools/embedded_dev_tooling` (Git submodule, private repo) installs and pins the
+  compiler, CubeMX and SEGGER tools with `toolchain.sh`. Tools are found through
+  `PATH`, so the firmware build must not depend on files inside the submodule.
 - ST's F746G-DISCO examples and BSP as the starting point for Ethernet with lwIP
   and for QSPI.
 - SEGGER J-Link Software Pack, Ozone debugger, RTT for logging, and
@@ -183,22 +189,43 @@ Open questions:
 - Python with the `cryptography` library for signing tools and the daemon.
 - Wireshark for inspecting the Ethernet link.
 
+### Build layout
+
+Our Makefiles are hand-written. CubeMX's generated Makefile stays in `cube/` as the
+reference for new source files and flags, because regenerating may overwrite edits.
+
+```text
+Makefile          # builds all three programs, signs the app, runs tests
+mk/common.mk      # shared compiler flags and rules
+stage1/Makefile   # sets the linker script and sources
+stage2/Makefile
+app/Makefile
+cube/             # CubeMX output: HAL, startup code, generated Makefile
+vendors/          # third-party source kept in this repo, including RTT
+```
+
+See [boot.md](documentation/boot.md) for what the three programs do.
+
 ## Week 1 (Nov 2 to Nov 8): Foundations and Unencrypted End-to-End
 
 **Status:** In progress
 
 - [ ] Order the remaining parts today: the secure elements, breadboard parts,
-  microSD card, power supply and logic analyzer (shipping is the biggest schedule
-  risk).
+  LEDs and resistors, microSD card, power supply and logic analyzer (shipping is
+  the biggest schedule risk).
 - [ ] Check in UM1907 that the CAN pins are reachable and whether they clash
-  with I2C on the Arduino header (unverified). Note the CANopen module's
-  bitrate, node ID, supply voltage and termination.
-- [ ] Set up VS Code, the Arm GNU Toolchain, the SEGGER J-Link Software Pack
-  and a Git repo.
-- [ ] Generate the project with CubeMX into a CMake build; flash, blink an LED,
-  and print logs over SEGGER RTT.
-- [ ] GitHub Actions from the start: build firmware with a pinned Arm GNU
-  Toolchain container and run host unit tests.
+  with I2C on the Arduino header (unverified). Choose two spare 3.3 V pins for the
+  LEDs at the same time. Note the CANopen module's bitrate, node ID, supply voltage
+  and termination.
+- [ ] Set up VS Code and a Git repo, and confirm the tools with
+  `toolchain.sh verify`.
+- [ ] Generate the project with CubeMX as a Makefile project, and add our own
+  `Makefile`, `mk/common.mk` and `app/Makefile`; flash, blink an LED, and print logs
+  over SEGGER RTT. Copy the RTT source into `vendors/`, because CI can't see
+  `~/.embedded-tools`.
+- [ ] GitHub Actions from the start: build firmware in a container pinned to the
+  same compiler version as local (13.2.1) and run host unit tests with `make test`.
+  CI doesn't check out the private submodule.
 - [ ] Bring up FreeRTOS with SEGGER SystemView tracing to see task timing and
   ISR latency.
 - [ ] Create three tasks: CANopen I/O polling, telemetry framing, and command
@@ -229,6 +256,8 @@ Open questions:
 - [ ] Design the flash layout: stage 1, stage 2 and the application in internal
   flash (1 MB, single bank, uneven sectors), and slot A, slot B and metadata in
   the 16 MB QSPI flash.
+- [ ] Add `stage1/Makefile` and `stage2/Makefile` with their own linker scripts, so
+  the build produces all three programs.
 - [ ] Write the custom bootloader: verify an Ed25519 signature on the application
   image with Monocypher before jumping to it.
 - [ ] Make it two-stage: a small stage 1 that never changes verifies stage 2,
@@ -239,6 +268,9 @@ Open questions:
   it outside QSPI (F7 OTP, to be confirmed in RM0385, or the ATECC608's
   monotonic counter), or state the limit in the threat model.
 - [ ] Write the signing script in Python.
+- [ ] Add the version LEDs to the application: v1 blinks red and v2 blinks green,
+  set by build flags (`make app VERSION=1 LED_COLOR=RED`). See
+  [boot.md](documentation/boot.md) for the expected result at each demo step.
 - [ ] Build the boot attack demos as tests (0.5 day, by Nov 15): flipped byte,
   wrong signing key, tampered stage 2, old signed image, and an image that never
   confirms itself. See [Security demos](#security-demos).
@@ -297,15 +329,16 @@ Open questions:
 - [ ] Add a scripted demo runner and a README table of feature, attack, expected
   result and test link (0.5 day, Nov 25).
 - [ ] GitHub Actions: add lint and static analysis (cppcheck or clang-tidy).
-- [ ] Write the README, with no separate design docs: architecture diagram, threat
-  model, flash layout, design notes, test results, and lessons learned. The threat
-  model must state this board's limits: any running code can ask the ATECC608 to
-  sign, session keys sit in RAM without isolation, RDP level 1 can be defeated in
-  a lab, and the I2C wires can be sniffed or spoofed unless protected.
+- [ ] Finish the README and the docs in `documentation/`: architecture diagram,
+  threat model, flash layout, design notes, test results, and lessons learned. The
+  threat model must state this board's limits: any running code can ask the
+  ATECC608 to sign, session keys sit in RAM without isolation, RDP level 1 can be
+  defeated in a lab, and the I2C wires can be sniffed or spoofed unless protected.
 - [ ] Record a 2 to 3 minute demo video showing a CANopen input change at the
   ground station, an output set by command, and five attacks: tampered image
-  refused, old signed image refused, Wireshark capture showing only ciphertext,
-  replayed command rejected, and a man-in-the-middle handshake failing.
+  refused and old signed image refused (with the LEDs showing the running version),
+  Wireshark capture showing only ciphertext, replayed command rejected, and a
+  man-in-the-middle handshake failing.
 - [ ] Optional, only after the video is recorded: a minimal out-of-tree I2C kernel
   driver and device tree overlay for the IMU on the Pi 5. Timebox to 2 to 3 days,
   and don't use the buffer days. Stop at the timebox even if it isn't finished.
@@ -334,7 +367,8 @@ is pointed at the attacker tool on the Pi 5, which forwards to the daemon.
 | Replay protection       | Set DO2 to 0, then resend a captured "DO2 = 1"        | DO2 stays 0, counter goes up                  | Week 4   |
 | Man-in-the-middle       | Swap the X25519 public key in transit                 | Signature check fails, no session is set up   | Week 4   |
 
-Covered by tests rather than live demos: algorithm test vectors, nonces never
+The boot demos also show the result on the red and green version LEDs. Covered by
+tests rather than live demos: algorithm test vectors, nonces never
 repeating, and RNG error handling. Forward secrecy is a design property, stated in
 the README without a demo.
 
@@ -376,7 +410,7 @@ partly shown:
 - **Hardware tests run by GitHub Actions:** hardware tests are still automated
   with local pytest, and CI still runs builds, unit tests and static analysis.
 - **Others:** NUCLEO-H563ZI port, Verilog/HDL, GUI, MCUboot, mbedTLS, Pi 4, classic
-  SPI, separate design docs, and Pi-side CAN.
+  SPI, CMake and Ninja, and Pi-side CAN.
 
 ## Résumé framing
 
@@ -395,6 +429,11 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 3, 2026:** Switched from CMake and Ninja to hand-written Makefiles alongside
+  CubeMX's, and added the build layout. Added `embedded_dev_tooling` as a submodule,
+  with tools found through `PATH`. Added red and green version LEDs on two spare
+  outputs. Separate docs now live in `documentation/`, so they're no longer out of
+  scope.
 - **Nov 2, 2026:** Made the kernel driver and overlay optional: only after the video
   is recorded, timeboxed to 2 to 3 days, and first to skip if behind.
 - **Nov 2, 2026:** Applied time savers: removed Yocto, the H563 port, GitHub-run
