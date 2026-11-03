@@ -1,0 +1,3 @@
+[submodule "tools/embedded_dev_tooling"]
+	path = tools/embedded_dev_tooling
+	url = https://github.com/floriangmeiner/embedded_dev_tooling
