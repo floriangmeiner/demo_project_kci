@@ -251,7 +251,7 @@ cube/             # CubeMX output: HAL, startup code, generated Makefile
 vendors/          # third-party source kept in this repo, including RTT
 ```
 
-See [boot.md](documentation/boot.md) for what the three programs do.
+See [system_boot.md](documentation/system_boot.md) for what the three programs do.
 
 ## Week 1 (Nov 2 to Nov 8): Foundations and Unencrypted End-to-End
 
@@ -330,7 +330,7 @@ See [boot.md](documentation/boot.md) for what the three programs do.
 - [ ] Write the signing script in Python.
 - [ ] Add the version LEDs to the application: v1 blinks red and v2 blinks green,
   set by build flags (`make app VERSION=1 LED_COLOR=RED`). See
-  [boot.md](documentation/boot.md) for the expected result at each demo step.
+  [system_boot.md](documentation/system_boot.md) for the expected result at each demo step.
 - [ ] Build the boot attack demos as tests (0.5 day, by Nov 15): flipped byte,
   wrong signing key, tampered stage 2, old signed image, and an image that never
   confirms itself. See [Security demos](#security-demos).

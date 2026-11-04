@@ -20,10 +20,10 @@ design. See [PLAN.md](PLAN.md) for the schedule.
 | Document                                                                    | What it covers                                            |
 | --------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [Plan](PLAN.md)                                                             | Schedule, materials, build layout and security demos      |
-| [Boot](documentation/boot.md)                                               | The three programs, slots A and B, and boot checks        |
-| [Cryptography](documentation/cryptography.md)                               | What each cryptographic technique does and why it's used  |
-| [Memory](documentation/memory.md)                                           | Flash and RAM layout, and where keys and images live      |
-| [Threat model](documentation/threat_model.md)                               | Assets, attackers, trust boundaries and security requirements |
+| [Boot](documentation/system_boot.md)                                               | The three programs, slots A and B, and boot checks        |
+| [Cryptography](documentation/system_cryptography.md)                               | What each cryptographic technique does and why it's used  |
+| [Memory](documentation/system_memory.md)                                           | Flash and RAM layout, and where keys and images live      |
+| [Threat model](documentation/system_threat_model.md)                               | Assets, attackers, trust boundaries and security requirements |
 | [NVIC](documentation/core_NVIC.md)                                          | Interrupt priorities and the FreeRTOS limit               |
 | [FreeRTOS middleware](documentation/middleware_RTOS.md)                     | Threads, stack sizes, priorities and thread rules         |
 | [Ethernet peripheral](documentation/peripheral_ETH.md)                      | Ethernet settings, DMA tradeoffs, memory and caches       |
@@ -80,7 +80,7 @@ design. See [PLAN.md](PLAN.md) for the schedule.
 ```
 
 The cryptography is explained in
-[documentation/cryptography.md](documentation/cryptography.md).
+[documentation/system_cryptography.md](documentation/system_cryptography.md).
 
 ## How the project maps to the job description
 

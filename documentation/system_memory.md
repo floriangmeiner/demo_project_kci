@@ -46,7 +46,7 @@ QSPI is memory-mapped at `0x90000000` for reading.
 | `0x90220000` | About 13.9 MB | Unused                                         |
 
 - **Slots:** one holds the last good image and the other receives the next update.
-  [boot.md](boot.md) describes how they're used.
+  [system_boot.md](system_boot.md) describes how they're used.
 - **Metadata:** records which slot is active and whether an update is pending. Two
   copies mean a power cut during a write can't lose both.
 - **Trust:** QSPI isn't protected, so anyone with the board could rewrite it. Images

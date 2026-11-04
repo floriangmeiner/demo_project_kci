@@ -203,7 +203,7 @@ and the other benefits come with it.
 
 ## Memory placement
 
-Descriptors and buffers go in SRAM2 at `0x2004C000`, matching [memory.md](memory.md).
+Descriptors and buffers go in SRAM2 at `0x2004C000`, matching [system_memory.md](system_memory.md).
 
 The generated code places the descriptors in sections named `.RxDecripSection` and
 `.TxDecripSection`, but `STM32F746xx_FLASH.ld` has no entries for them, and has one
@@ -289,7 +289,7 @@ ordinary CPU code.
    descriptor and buffer, and retest all the link demos.
 
 Turning the data cache on may not help as much as expected. DTCM, where
-[memory.md](memory.md) plans to keep stacks and session keys, is never cached and is
+[system_memory.md](system_memory.md) plans to keep stacks and session keys, is never cached and is
 already fast.
 
 ## To check after regenerating

@@ -1,7 +1,7 @@
 # Boot Sequence and Verification
 
 This is the planned design. The bootloader isn't built yet. The proposed addresses
-are in [memory.md](memory.md) and may change.
+are in [system_memory.md](system_memory.md) and may change.
 
 The STM32 only runs firmware signed with our Ed25519 private key. That key stays off
 the board, and the bootloader holds only the public key.

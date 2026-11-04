@@ -149,7 +149,7 @@ Why `linkTask` is separate from `defaultTask`:
 
 These should fit. Confirm with `xPortGetFreeHeapSize` once everything is running.
 
-The session keys are planned for DTCM in [memory.md](memory.md). Stacks are allocated
+The session keys are planned for DTCM in [system_memory.md](system_memory.md). Stacks are allocated
 from the FreeRTOS heap, so any key copies on `linkTask`'s stack land wherever that
 heap is linked. Check the linker script and wipe key copies after use.
 
