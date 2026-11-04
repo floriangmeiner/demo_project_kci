@@ -15,6 +15,20 @@ module's outputs.
 started and no firmware exists yet, so everything below describes the planned
 design. See [PLAN.md](PLAN.md) for the schedule.
 
+## Documentation
+
+| Document                                                                    | What it covers                                            |
+| --------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [Plan](PLAN.md)                                                             | Schedule, materials, build layout and security demos      |
+| [Boot](documentation/boot.md)                                               | The three programs, slots A and B, and boot checks        |
+| [Cryptography](documentation/cryptography.md)                               | What each cryptographic technique does and why it's used  |
+| [Memory](documentation/memory.md)                                           | Flash and RAM layout, and where keys and images live      |
+| [Threat model](documentation/threat_model.md)                               | Assets, attackers, trust boundaries and security requirements |
+| [CAN peripheral](documentation/peripheral_CAN.md)                           | CAN1 pins, bit timing, sample point and interrupts        |
+| [Job mapping](documentation/job-description-to-project-mapping.md)          | What part of the project covers each posting requirement  |
+| [License](licensing/LICENSE)                                                | This project's license                                    |
+| [Third-party notices](licensing/third-party-notices.md)                     | Third-party software, its licenses and their conditions   |
+
 ## What the demo shows
 
 - A change on a CANopen input appears in a terminal stream on the Pi, updated every
@@ -82,11 +96,3 @@ work, so it's timeboxed to protect the core demo.
 - Yocto image
 - GUI
 - Hardware tests triggered from GitHub Actions; these run locally with pytest
-
-## Documentation
-
-- [PLAN.md](PLAN.md): schedule, materials and security demos
-- [documentation/cryptography.md](documentation/cryptography.md): what each
-  cryptographic item does and why
-- [documentation/job-description-to-project-mapping.md](documentation/job-description-to-project-mapping.md):
-  what part of the project covers each requirement in the posting

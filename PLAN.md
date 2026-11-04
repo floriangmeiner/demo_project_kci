@@ -22,8 +22,7 @@ an ATECC608 secure element.
 
 ## Architecture
 
-Hardware (power supplies not shown; the CAN pins are still to be confirmed in
-UM1907):
+Hardware (power supplies not shown; see [Pin assignments](#pin-assignments)):
 
 ```text
 +--------------------------------------------------------------------+
@@ -44,7 +43,7 @@ UM1907):
 | (update slots A and B)   |                  | (demos only)         |
 +---+--------------+-------+                  +--------+-------------+
     |              |                                   |
-    | I2C          | CAN TX/RX                         | I2C (optional)
+    | I2C2         | CAN1: PB9 TX, PB8 RX              | I2C (optional)
     |              |                                   |
 +---+------+  +----+---------+                   +-----+--------+
 | ATECC608 |  | CAN          |                   | I2C IMU      |
@@ -60,6 +59,54 @@ UM1907):
               | DI and DO    |
               +--------------+
 ```
+
+### Pin assignments
+
+CAN1 is reachable on the Arduino header, but it uses the same two pins as the
+header's I2C1, so the ATECC608 moves to I2C2. **I2C2 has no wiring route yet** (see
+below). This comes from the board schematic (MB1191 rev B-02, `19176.pdf`), UM1907
+and CubeMX's pin data. It has **not been tested on hardware**, and the board's revision
+should be checked against the schematic.
+
+| Function            | MCU pin | MCU ball | Header           | Notes                              |
+| ------------------- | ------- | -------- | ---------------- | ---------------------------------- |
+| CAN1 RX             | PB8     | A7       | CN7 pin 10 (D15) | 2.7 kohm on-board pull-up to 3.3 V |
+| CAN1 TX             | PB9     | B4       | CN7 pin 9 (D14)  | 2.7 kohm on-board pull-up to 3.3 V |
+| ATECC608 SCL (I2C2) | PF1     | E2       | None             | Also SDRAM FMC_A1; route open      |
+| ATECC608 SDA (I2C2) | PF0     | D2       | None             | Also SDRAM FMC_A0; route open      |
+| Red LED             | PI3     | C13      | CN4 pin 8 (D7)   | Series resistor                    |
+| Green LED           | PI2     | C14      | CN7 pin 1 (D8)   | Series resistor                    |
+| 3.3 V, GND          | -       | -        | CN6 pins 4, 6    | ATECC608, transceiver logic supply |
+
+Constraints on these pins:
+
+- PB8 and PB9 also go to the camera connector and CN2 (the EXT/RF connector), so
+  keep both empty. The CubeMX project currently has CAN1 on PA12 and PD0, and must
+  move to PB8 and PB9.
+- The on-board pull-ups suit CAN, but use a transceiver with 3.3 V logic, because a
+  5 V RXD output would drive PB8 against a pull-up to 3.3 V. The owned transceivers'
+  part number still needs checking.
+
+Other CAN pins on this chip, and why they aren't used:
+
+| CAN pins               | Connected to on this board      | Why not                                 |
+| ---------------------- | ------------------------------- | --------------------------------------- |
+| CAN1: PA11, PA12       | USB FS connector CN13           | Fallback; see below                     |
+| CAN1: PD0, PD1         | SDRAM data lines                | No header access                        |
+| CAN1: PI9, PH13        | LCD VSYNC, camera power enable  | Used by on-board parts; no header pins  |
+| CAN2: PB5, PB6         | USB HS PHY, QSPI chip select    | PB6 is needed for QSPI                  |
+| CAN2: PB12, PB13       | USB HS PHY                      | PHY shares the lines; no header access  |
+
+**Fallback:** PA11 and PA12 reach CN13 through a USB filter chip (U18), so CAN could
+use a micro-USB breakout, which would leave I2C1 free for the ATECC608. It needs USB
+FS disabled and VBUS left unconnected, and CAN through that filter is untested.
+
+**Open item, I2C2 wiring:** PF0 and PF1 run only to the SDRAM address lines and have
+no header pin, so a physical way to reach them must be found before the ATECC608 can
+connect. Using them also means the SDRAM stays unused. I2C2's other pins are no
+easier: PB10, PB11 and PH4 go to the USB HS PHY, and PH5 to SDRAM write enable. If
+there's no practical route, the options are software I2C on spare header pins such
+as PG6 (D2) and PG7 (D4), or the CN13 fallback above.
 
 Data flow: CANopen IO module -> CAN -> STM32 -> encrypted Ethernet -> daemon on
 the Pi 5.
@@ -150,24 +197,24 @@ Open questions:
 - [x] Type-A to mini-B USB cable for the board's ST-LINK port (CN14).
 - [x] Ethernet cable, connecting the Pi 5 and the STM32 directly with static IPs.
 - [x] Raspberry Pi 5 (owned): the "ground station", running Raspberry Pi OS.
-- [ ] microSD card and power supply for the Pi 5.
+- [x] microSD card and power supply for the Pi 5.
 - [ ] Reflash the on-board ST-LINK with SEGGER's J-Link firmware, for flashing,
   RTT and SystemView over one USB cable (check SEGGER's current terms and the
   revert steps first). The J-Link Base (owned) isn't needed unless this fails.
 - [ ] At least two ATECC608 secure-element breakouts on I2C (Adafruit #4314 or
   SparkFun Qwiic ATECC608A). Supports P-256 only. Locking is permanent, so a
   configuration mistake can use up a chip.
-- [ ] Breadboard, male-to-male and male-to-female jumper wires, 4.7 kohm
+- [x] Breadboard, male-to-male and male-to-female jumper wires, 4.7 kohm
   pull-up resistors.
 - [x] I2C IMU (owned), wired to the Pi 5 only for the optional kernel driver. 3.3 V
   logic only.
-- [ ] One red LED, one green LED and two series resistors, to show which firmware
-  version is running. They use two spare general-purpose outputs on the Discovery
-  board (check UM1907).
-- [ ] A cheap logic analyzer (8-channel Saleae clone).
-- [x] CAN transceivers and CANopen IO module (owned). Still needs: two
-  reachable CAN pins on the Discovery board (check UM1907), 120 ohm terminators
-  as required, and power for the module.
+- [x] One red LED, one green LED and two series resistors, to show which firmware
+  version is running. They use two spare general-purpose outputs, PI3 (D7) and
+  PI2 (D8).
+- [x] A cheap logic analyzer (8-channel Saleae clone).
+- [x] CAN transceivers and CANopen IO module (owned). Still needs: 3.3 V logic
+  confirmed on the transceivers, 120 ohm terminators as required, and power for the
+  module. CAN1 is on CN7 pins 9 and 10; see [Pin assignments](#pin-assignments).
 
 ### Software and tools (all free)
 
@@ -213,10 +260,14 @@ See [boot.md](documentation/boot.md) for what the three programs do.
 - [ ] Order the remaining parts today: the secure elements, breadboard parts,
   LEDs and resistors, microSD card, power supply and logic analyzer (shipping is
   the biggest schedule risk).
-- [ ] Check in UM1907 that the CAN pins are reachable and whether they clash
-  with I2C on the Arduino header (unverified). Choose two spare 3.3 V pins for the
-  LEDs at the same time. Note the CANopen module's bitrate, node ID, supply voltage
-  and termination.
+- [x] Check on paper that the CAN pins are reachable and whether they clash with
+  I2C. They are reachable and they do clash; see [Pin assignments](#pin-assignments).
+  LED pins chosen.
+- [ ] Prove CAN on hardware before relying on it: change PB8 and PB9 to CAN1 in
+  CubeMX, confirm the transceiver has 3.3 V logic, and exchange frames with the
+  CANopen module, using the logic analyzer on TX and RX if it fails. If it doesn't
+  work, switch to the fallback on CN13.
+- [ ] Note the CANopen module's bitrate, node ID, supply voltage and termination.
 - [ ] Set up VS Code and a Git repo, and confirm the tools with
   `toolchain.sh verify`.
 - [ ] Generate the project with CubeMX as a Makefile project, and add our own
@@ -302,10 +353,10 @@ See [boot.md](documentation/boot.md) for what the three programs do.
 - [ ] Add crypto test coverage (0.5 day): published test vectors (RFC 8439, RFC
   7748, RFC 8032), nonces never repeating, and an injected RNG error stopping
   key generation.
-- [ ] Bring up I2C to the ATECC608 and port CryptoAuthLib, then move the device
-  identity to it: generate a P-256 key on the chip and lock it as non-readable.
-  Timebox this to 1 day after the link works on the test key; locking is
-  permanent. If it overruns, ship the test key and state the limit in the threat
+- [ ] Bring up I2C2 (PF0, PF1) to the ATECC608 and port CryptoAuthLib, then move
+  the device identity to it: generate a P-256 key on the chip and lock it as
+  non-readable. Timebox this to 1 day after the link works on the test key; locking
+  is permanent. If it overruns, ship the test key and state the limit in the threat
   model.
 - [ ] Add the ATECC608 key-read demo (0.25 day): reading the private key slot is
   refused, while the chip can still produce a valid signature.
@@ -429,6 +480,10 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 3, 2026:** Checked CAN access against the board schematic. CAN1 is reachable
+  on PB8 and PB9 but clashes with I2C1, so the ATECC608 moves to I2C2 on PF0
+  and PF1, which still needs a physical wiring route. Added pin assignments, a CAN
+  fallback on CN13, and a Week 1 hardware test. CAN is not yet tested on hardware.
 - **Nov 3, 2026:** Switched from CMake and Ninja to hand-written Makefiles alongside
   CubeMX's, and added the build layout. Added `embedded_dev_tooling` as a submodule,
   with tools found through `PATH`. Added red and green version LEDs on two spare
