@@ -279,10 +279,19 @@ See [boot.md](documentation/boot.md) for what the three programs do.
   CI doesn't check out the private submodule.
 - [ ] Bring up FreeRTOS with SEGGER SystemView tracing to see task timing and
   ISR latency.
-- [ ] Create three tasks: CANopen I/O polling, telemetry framing, and command
-  handling. Use queues and an ISR-driven UART with DMA on the ST-LINK virtual COM
-  port (confirm it works with the J-Link firmware). The Cortex-M7 data cache needs
-  non-cacheable MPU regions or cache maintenance for DMA buffers.
+- [ ] Create the application threads, connected by queues:
+  - `defaultTask`: starts lwIP and the other threads, then exits or idles.
+  - `canOpenTask`: CANopen I/O polling, heartbeat monitoring and applying output
+    commands.
+  - `linkTask`: telemetry / command framing, and owns the UDP socket and (from Week
+    3) the session keys.
+
+  See [middleware_RTOS.md](documentation/middleware_RTOS.md) for stack sizes and
+  priorities.
+- [ ] Add an ISR-driven UART with DMA on the ST-LINK virtual COM port (confirm it
+  works with the J-Link firmware). The data cache stays off, so DMA buffers need no
+  MPU regions or cache maintenance; see
+  [peripheral_ETH.md](documentation/peripheral_ETH.md#caches).
 - [ ] Define a binary telemetry packet format, with no CRC on the link, because
   the AEAD tag will detect corruption. Write host-side unit tests for
   encode/decode.
@@ -290,8 +299,8 @@ See [boot.md](documentation/boot.md) for what the three programs do.
   polling of the module's inputs, and heartbeat monitoring. Report module
   state in telemetry, including an unplugged module or a lost heartbeat.
 - [ ] Bring up UDP over lwIP from ST's example, with static IPs and a direct
-  cable to the Pi 5. Ethernet DMA descriptors and buffers need the same cache
-  handling as UART DMA.
+  cable to the Pi 5. Place Ethernet DMA descriptors and buffers in SRAM2 using linker
+  sections.
 - [ ] Write the first version of the daemon, unencrypted: the 500 ms terminal
   stream and the `set` command, so the CAN-to-terminal path and the output command
   work end to end.
@@ -360,6 +369,11 @@ See [boot.md](documentation/boot.md) for what the three programs do.
   model.
 - [ ] Add the ATECC608 key-read demo (0.25 day): reading the private key slot is
   refused, while the chip can still produce a valid signature.
+- [ ] Add firmware loading over TFTP (1 day): enable lwIP's TFTP server only after an
+  authenticated "update" command, write the image to the inactive QSPI slot, then
+  restart into stage 2. See
+  [peripheral_ETH.md](documentation/peripheral_ETH.md#loading-firmware-images-with-tftp).
+  Until this exists, load Week 2 test images with a debug method such as J-Link.
 
 **Notes:**
 
@@ -480,6 +494,10 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 3, 2026:** Turned the data cache off, so DMA needs no MPU regions or cache
+  maintenance, and turned the instruction cache on. Revisit only if crypto is too slow.
+- **Nov 3, 2026:** Chose TFTP for loading firmware images over the network, kept off
+  until an authenticated command turns it on. Added a 1-day task to Week 3.
 - **Nov 3, 2026:** Checked CAN access against the board schematic. CAN1 is reachable
   on PB8 and PB9 but clashes with I2C1, so the ATECC608 moves to I2C2 on PF0
   and PF1, which still needs a physical wiring route. Added pin assignments, a CAN

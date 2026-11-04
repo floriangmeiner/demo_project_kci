@@ -92,9 +92,9 @@ built. It stores no project data.
 
 | Memory      | Address      | Size   | Contents                                          |
 | ----------- | ------------ | ------ | ------------------------------------------------- |
-| DTCM        | `0x20000000` | 64 KB  | Stacks and session keys; not cached               |
+| DTCM        | `0x20000000` | 64 KB  | Stacks and session keys                           |
 | SRAM1       | `0x20010000` | 240 KB | FreeRTOS heap, lwIP, general data                 |
-| SRAM2       | `0x2004C000` | 16 KB  | Ethernet DMA descriptors, set as non-cacheable by the MPU |
+| SRAM2       | `0x2004C000` | 16 KB  | Ethernet DMA descriptors and buffers              |
 | Backup SRAM | `0x40024000` | 4 KB   | Reset reasons and fault log, kept across resets   |
 
 Backup SRAM avoids wearing out flash with fault logs. Its contents aren't secret and

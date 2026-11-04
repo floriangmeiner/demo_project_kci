@@ -78,7 +78,8 @@ The application always runs from internal flash.
 
 ## Updates and recovery
 
-1. A new signed image is written to a free QSPI slot.
+1. The Pi sends a new signed image over TFTP, and the application writes it to a free
+   QSPI slot. See [peripheral_ETH.md](peripheral_ETH.md#loading-firmware-images-with-tftp).
 2. Stage 2 verifies it, copies it to internal flash and verifies the copy.
 3. The new application starts and has to confirm itself as good.
 4. If it does, the update is kept and the version counter goes up.

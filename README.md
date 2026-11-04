@@ -24,6 +24,9 @@ design. See [PLAN.md](PLAN.md) for the schedule.
 | [Cryptography](documentation/cryptography.md)                               | What each cryptographic technique does and why it's used  |
 | [Memory](documentation/memory.md)                                           | Flash and RAM layout, and where keys and images live      |
 | [Threat model](documentation/threat_model.md)                               | Assets, attackers, trust boundaries and security requirements |
+| [NVIC](documentation/core_NVIC.md)                                          | Interrupt priorities and the FreeRTOS limit               |
+| [FreeRTOS middleware](documentation/middleware_RTOS.md)                     | Threads, stack sizes, priorities and thread rules         |
+| [Ethernet peripheral](documentation/peripheral_ETH.md)                      | Ethernet settings, DMA tradeoffs, memory and caches       |
 | [CAN peripheral](documentation/peripheral_CAN.md)                           | CAN1 pins, bit timing, sample point and interrupts        |
 | [Job mapping](documentation/job-description-to-project-mapping.md)          | What part of the project covers each posting requirement  |
 | [License](licensing/LICENSE)                                                | This project's license                                    |
