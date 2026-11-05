@@ -10,9 +10,9 @@ cut.
 
 ## Goal
 
-A portfolio project that mirrors the
-[Kepler Embedded Software role](https://jobs.lever.co/kepler/accae2f6-7ffe-49a8-a485-ee9c13421c95):
-an STM32 "spacecraft" running FreeRTOS with a secure bootloader and an encrypted,
+A portfolio project that mirrors the [Kepler Embedded Software
+role](https://jobs.lever.co/kepler/accae2f6-7ffe-49a8-a485-ee9c13421c95): an
+STM32 "spacecraft" running FreeRTOS with a secure bootloader and an encrypted,
 authenticated link to a Linux "ground station", with automated hardware tests
 and CI. A small kernel driver and device tree overlay on the Pi are optional.
 
@@ -63,11 +63,11 @@ Hardware (power supplies not shown; see [Pin assignments](#pin-assignments)):
 ### Pin assignments
 
 CAN1 is reachable on the Arduino header, but it uses the same two pins as the
-header's I2C1, so the ATECC608 moves to I2C2. **I2C2 has no wiring route yet** (see
-[TODO.md](TODO.md#hardware)). This comes from the
-[B-04 schematic](vendors/st_microelectronics/stm32f746g-disco/MB1191_B-04/mb1191-f746ngh6-b04-schematic.pdf),
-which matches this board's `MB1191-B-04` sticker, along with UM1907 and CubeMX's pin data. It
-has **not been tested on hardware**.
+header's I2C1, so the ATECC608 moves to I2C2. **I2C2 has no wiring route yet**
+(see [TODO.md](TODO.md#hardware)). This comes from the [B-04
+schematic](vendors/st_microelectronics/stm32f746g-disco/MB1191_B-04/mb1191-f746ngh6-b04-schematic.pdf),
+which matches this board's `MB1191-B-04` sticker, along with UM1907 and CubeMX's
+pin data. It has **not been tested on hardware**.
 
 | Function            | MCU pin | MCU ball | Header           | Notes                              |
 | ------------------- | ------- | -------- | ---------------- | ---------------------------------- |
@@ -86,11 +86,11 @@ has **not been tested on hardware**.
 
 Constraints on these pins:
 
-- PB8 and PB9 also go to the camera connector and CN2 (the I2C extension connector), so
-  keep both empty.
-- The on-board pull-ups suit CAN, but use a transceiver with 3.3 V logic, because a
-  5 V RXD output would drive PB8 against a pull-up to 3.3 V. The owned transceivers'
-  part number still needs checking.
+- PB8 and PB9 also go to the camera connector and CN2 (the I2C extension
+  connector), so keep both empty.
+- The on-board pull-ups suit CAN, but use a transceiver with 3.3 V logic,
+  because a 5 V RXD output would drive PB8 against a pull-up to 3.3 V. The owned
+  transceivers' part number still needs checking.
 
 Other CAN pins on this chip, and why they aren't used:
 
@@ -102,9 +102,10 @@ Other CAN pins on this chip, and why they aren't used:
 | CAN2: PB5, PB6         | USB HS PHY, QSPI chip select    | PB6 is needed for QSPI                  |
 | CAN2: PB12, PB13       | USB HS PHY                      | PHY shares the lines; no header access  |
 
-**Fallback:** PA11 and PA12 reach CN13 through a USB filter chip (U18), so CAN could
-use a micro-USB breakout, which would leave I2C1 free for the ATECC608. It needs USB
-FS disabled and VBUS left unconnected, and CAN through that filter is untested.
+**Fallback:** PA11 and PA12 reach CN13 through a USB filter chip (U18), so CAN
+could use a micro-USB breakout, which would leave I2C1 free for the ATECC608. It
+needs USB FS disabled and VBUS left unconnected, and CAN through that filter is
+untested.
 
 Data flow: CANopen IO module -> CAN -> STM32 -> encrypted Ethernet -> daemon on
 the Pi 5.
@@ -176,9 +177,9 @@ The CANopen module and the outputs' behavior on link loss are still open; see
 
 - **Never set readout protection (RDP) to level 2.** It is irreversible and
   bricks debug access for good. Level 1 is the highest level to use.
-- Keep the test board at RDP level 0. At level 1, flash is locked once a debugger
-  connects, which breaks J-Link flashing and probably RTT. Going back to level
-  0 mass-erases the flash, so test level 1 manually as a separate step.
+- Keep the test board at RDP level 0. At level 1, flash is locked once a
+  debugger connects, which breaks J-Link flashing and probably RTT. Going back
+  to level 0 mass-erases the flash, so test level 1 manually as a separate step.
 
 ## Materials
 
@@ -188,36 +189,39 @@ The CANopen module and the outputs' behavior on link loss are still open; see
   QSPI flash, Ethernet, 4.3" touch screen. No TrustZone and no hardware
   crypto.
 - [x] Type-A to mini-B USB cable for the board's ST-LINK port (CN14).
-- [x] Ethernet cable, connecting the Pi 5 and the STM32 directly with static IPs.
+- [x] Ethernet cable, connecting the Pi 5 and the STM32 directly with static
+      IPs.
 - [x] Raspberry Pi 5 (owned): the "ground station", running Raspberry Pi OS.
 - [x] microSD card and power supply for the Pi 5.
 - [x] Reflash the on-board ST-LINK with SEGGER's J-Link firmware, for flashing,
-  RTT and SystemView over one USB cable. Done Nov 4: it shows as `J-Link STLink`
-  (firmware V21), and J-Link Commander connects over SWD and identifies the Cortex-M7.
-  Flashing, RTT and SystemView aren't tested yet. The J-Link Base (owned) isn't needed
-  unless this fails.
+      RTT and SystemView over one USB cable. Done Nov 4: it shows as `J-Link
+      STLink` (firmware V21), and J-Link Commander connects over SWD and
+      identifies the Cortex-M7. Flashing, RTT and SystemView aren't tested yet.
+      The J-Link Base (owned) isn't needed unless this fails.
 - [ ] At least two ATECC608 secure-element breakouts on I2C (Adafruit #4314 or
   SparkFun Qwiic ATECC608A). Supports P-256 only. Locking is permanent, so a
   configuration mistake can use up a chip.
 - [x] Breadboard, male-to-male and male-to-female jumper wires, 4.7 kohm
   pull-up resistors.
-- [x] I2C IMU (owned), wired to the Pi 5 only for the optional kernel driver. 3.3 V
-  logic only.
-- [x] One red LED, one green LED and two series resistors, to show which firmware
-  version is running. They use two spare general-purpose outputs, PI3 (D7) and
-  PI2 (D8).
+- [x] I2C IMU (owned), wired to the Pi 5 only for the optional kernel driver.
+      3.3 V logic only.
+- [x] One red LED, one green LED and two series resistors, to show which
+      firmware version is running. They use two spare general-purpose outputs,
+      PI3 (D7) and PI2 (D8).
 - [x] A cheap logic analyzer (8-channel Saleae clone).
 - [x] CAN transceivers and CANopen IO module (owned). Still needs: 3.3 V logic
-  confirmed on the transceivers, 120 ohm terminators as required, and power for the
-  module. CAN1 is on CN7 pins 9 and 10; see [Pin assignments](#pin-assignments).
+      confirmed on the transceivers, 120 ohm terminators as required, and power
+      for the module. CAN1 is on CN7 pins 9 and 10; see [Pin
+      assignments](#pin-assignments).
 
 ### Software and tools (all free)
 
-- VS Code as the main editor, with GNU Make, Ubuntu's `gcc-arm-none-eabi` compiler,
-  and STM32CubeMX for pin, clock and code generation.
-- `tools/embedded_dev_tooling` (Git submodule, private repo) installs and pins the
-  compiler, CubeMX and SEGGER tools with `toolchain.sh`. Tools are found through
-  `PATH`, so the firmware build must not depend on files inside the submodule.
+- VS Code as the main editor, with GNU Make, Ubuntu's `gcc-arm-none-eabi`
+  compiler, and STM32CubeMX for pin, clock and code generation.
+- `tools/embedded_dev_tooling` (Git submodule, private repo) installs and pins
+  the compiler, CubeMX and SEGGER tools with `toolchain.sh`. Tools are found
+  through `PATH`, so the firmware build must not depend on files inside the
+  submodule.
 - ST's F746G-DISCO examples and BSP as the starting point for Ethernet with lwIP
   and for QSPI.
 - SEGGER J-Link Software Pack, Ozone debugger, RTT for logging, and
@@ -235,8 +239,8 @@ The CANopen module and the outputs' behavior on link loss are still open; see
 
 Our Makefiles are hand-written. CubeMX's generated Makefile stays in
 `kepler_demo_stm32f746g-disco/` as the reference for new source files and flags,
-because regenerating may overwrite edits. Only that CubeMX project exists so far; the
-rest of this layout is planned.
+because regenerating may overwrite edits. Only that CubeMX project exists so
+far; the rest of this layout is planned.
 
 ```text
 Makefile          # builds all three programs, signs the app, runs tests
@@ -244,11 +248,13 @@ mk/common.mk      # shared compiler flags and rules
 stage1/Makefile   # sets the linker script and sources
 stage2/Makefile
 app/Makefile
-kepler_demo_stm32f746g-disco/  # CubeMX output: HAL, startup code, generated Makefile
+kepler_demo_stm32f746g-disco/
+                  # CubeMX output: HAL, startup code, generated Makefile
 vendors/          # third-party source kept in this repo, including RTT
 ```
 
-See [system_boot.md](documentation/system_boot.md) for what the three programs do.
+See [system_boot.md](documentation/system_boot.md) for what the three programs
+do.
 
 ## Week 1 (Nov 2 to Nov 8): Foundations and Unencrypted End-to-End
 
@@ -257,33 +263,36 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 - [ ] Order the secure elements, the only parts still unticked under
   [Materials](#materials) (shipping is the biggest schedule risk).
 - [x] Check on paper that the CAN pins are reachable and whether they clash with
-  I2C. They are reachable and they do clash; see [Pin assignments](#pin-assignments).
-  LED pins chosen.
-- [x] Do the first pass of the hardware setup in CubeMX and generate the code. Done
-  Nov 4: it builds with no warnings, but hasn't run on the board. Settings are in
-  [core_cortexM7.md](documentation/core_cortexM7.md),
-  [core_NVIC.md](documentation/core_NVIC.md),
-  [core_oscillators.md](documentation/core_oscillators.md),
-  [middleware_RTOS.md](documentation/middleware_RTOS.md),
-  [middleware_LWIP.md](documentation/middleware_LWIP.md),
-  [peripheral_CAN.md](documentation/peripheral_CAN.md),
-  [peripheral_ETH.md](documentation/peripheral_ETH.md),
-  [peripheral_QSPI.md](documentation/peripheral_QSPI.md) and
-  [peripheral_GPIO.md](documentation/peripheral_GPIO.md).
+      I2C. They are reachable and they do clash; see [Pin
+      assignments](#pin-assignments). LED pins chosen.
+- [x] Do the first pass of the hardware setup in CubeMX and generate the code.
+      Done Nov 4: it builds with no warnings, but hasn't run on the board.
+      Settings are in [core_cortexM7.md](documentation/core_cortexM7.md),
+      [core_NVIC.md](documentation/core_NVIC.md),
+      [core_oscillators.md](documentation/core_oscillators.md),
+      [middleware_RTOS.md](documentation/middleware_RTOS.md),
+      [middleware_LWIP.md](documentation/middleware_LWIP.md),
+      [peripheral_CAN.md](documentation/peripheral_CAN.md),
+      [peripheral_ETH.md](documentation/peripheral_ETH.md),
+      [peripheral_QSPI.md](documentation/peripheral_QSPI.md) and
+      [peripheral_GPIO.md](documentation/peripheral_GPIO.md).
 - [ ] Finish the CubeMX settings, then regenerate. The list is in
   [TODO.md](TODO.md#finish-the-cubemx-settings).
-- [ ] Prove CAN on hardware before relying on it: confirm the transceiver has 3.3 V
-  logic, and exchange frames with the CANopen module, using the logic analyzer on TX
-  and RX if it fails. If it doesn't work, switch to the fallback on CN13.
-- [ ] Note the CANopen module's bitrate, node ID, supply voltage and termination.
+- [ ] Prove CAN on hardware before relying on it: confirm the transceiver has
+      3.3 V logic, and exchange frames with the CANopen module, using the logic
+      analyzer on TX and RX if it fails. If it doesn't work, switch to the
+      fallback on CN13.
+- [ ] Note the CANopen module's bitrate, node ID, supply voltage and
+      termination.
 - [ ] Set up VS Code and a Git repo, and confirm the tools with
   `toolchain.sh verify`.
-- [ ] Add our own `Makefile`, `mk/common.mk` and `app/Makefile` around the generated
-  project; flash, blink LD1 on PI1, and print logs over SEGGER RTT. Copy the RTT source
-  into `vendors/`, because CI can't see `~/.embedded-tools`.
+- [ ] Add our own `Makefile`, `mk/common.mk` and `app/Makefile` around the
+      generated project; flash, blink LD1 on PI1, and print logs over SEGGER
+      RTT. Copy the RTT source into `vendors/`, because CI can't see
+      `~/.embedded-tools`.
 - [ ] GitHub Actions from the start: build firmware in a container pinned to the
-  same compiler version as local (13.2.1) and run host unit tests with `make test`.
-  CI doesn't check out the private submodule.
+      same compiler version as local (13.2.1) and run host unit tests with `make
+      test`. CI doesn't check out the private submodule.
 - [ ] Bring up FreeRTOS with SEGGER SystemView tracing to see task timing and
   ISR latency.
 - [ ] Write the application threads, connected by queues. CubeMX generates their
@@ -291,29 +300,30 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
   - `defaultTask`: starts lwIP and the other threads, then exits or idles.
   - `canOpenTask`: CANopen I/O polling, heartbeat monitoring and applying output
     commands.
-  - `linkTask`: telemetry / command framing, and owns the UDP socket and (from Week
-    3) the session keys.
+  - `linkTask`: telemetry / command framing, and owns the UDP socket and (from
+    Week 3) the session keys.
 
   See [middleware_RTOS.md](documentation/middleware_RTOS.md) for stack sizes and
   priorities.
 - [ ] Add an ISR-driven UART with DMA on the virtual COM port. It shows up as
-  `/dev/ttyACM0` with the J-Link firmware, but passing data still needs confirming. The
-  data cache stays off, so DMA buffers need no
-  MPU regions or cache maintenance; see
-  [peripheral_ETH.md](documentation/peripheral_ETH.md#caches).
+      `/dev/ttyACM0` with the J-Link firmware, but passing data still needs
+      confirming. The data cache stays off, so DMA buffers need no MPU regions
+      or cache maintenance; see
+      [peripheral_ETH.md](documentation/peripheral_ETH.md#caches).
 - [ ] Define a binary telemetry packet format, with no CRC on the link, because
   the AEAD tag will detect corruption. Write host-side unit tests for
   encode/decode.
 - [ ] Add a minimal hand-written CANopen master on the STM32: NMT start, SDO
   polling of the module's inputs, and heartbeat monitoring. Report module
   state in telemetry, including an unplugged module or a lost heartbeat.
-- [ ] Bring up UDP over lwIP from ST's example, with static IPs (STM32 10.1.1.123, Pi
-  10.1.1.1) and a direct cable to the Pi 5. Decide where the Ethernet DMA descriptors and
-  buffers go, because the 12 generated RX buffers don't fit in SRAM2; see
-  [Memory placement](documentation/peripheral_ETH.md#memory-placement).
+- [ ] Bring up UDP over lwIP from ST's example, with static IPs (STM32
+      10.1.1.123, Pi 10.1.1.1) and a direct cable to the Pi 5. Decide where the
+      Ethernet DMA descriptors and buffers go, because the 12 generated RX
+      buffers don't fit in SRAM2; see [Memory
+      placement](documentation/peripheral_ETH.md#memory-placement).
 - [ ] Write the first version of the daemon, unencrypted: the 500 ms terminal
-  stream and the `set` command, so the CAN-to-terminal path and the output command
-  work end to end.
+      stream and the `set` command, so the CAN-to-terminal path and the output
+      command work end to end.
 
 **Notes:**
 
@@ -322,16 +332,17 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 **Status:** Not started
 
 - [ ] Get the QSPI flash working, using ST's BSP: erase and write in indirect
-  mode, then read back a test pattern in memory-mapped mode (which is read-only).
-  Memory-mapped reads need their own MPU region, because the current one blocks
-  `0x90000000`; see [MPU](documentation/core_cortexM7.md#mpu).
+      mode, then read back a test pattern in memory-mapped mode (which is
+      read-only). Memory-mapped reads need their own MPU region, because the
+      current one blocks `0x90000000`; see
+      [MPU](documentation/core_cortexM7.md#mpu).
 - [ ] Design the flash layout: stage 1, stage 2 and the application in internal
   flash (1 MB, single bank, uneven sectors), and slot A, slot B and metadata in
   the 16 MB QSPI flash.
-- [ ] Add `stage1/Makefile` and `stage2/Makefile` with their own linker scripts, so
-  the build produces all three programs.
-- [ ] Write the custom bootloader: verify an Ed25519 signature on the application
-  image with Monocypher before jumping to it.
+- [ ] Add `stage1/Makefile` and `stage2/Makefile` with their own linker scripts,
+      so the build produces all three programs.
+- [ ] Write the custom bootloader: verify an Ed25519 signature on the
+      application image with Monocypher before jumping to it.
 - [ ] Make it two-stage: a small stage 1 that never changes verifies stage 2,
   which verifies the application. Both stages share the verification code.
 - [ ] Add A/B update with rollback if the new image fails to confirm itself:
@@ -340,9 +351,10 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
   it outside QSPI (the F7's 1 KB OTP area, per RM0385, or the ATECC608's
   monotonic counter), or state the limit in the threat model.
 - [ ] Write the signing script in Python.
-- [ ] Add the version LEDs to the application: v1 blinks red and v2 blinks green,
-  set by build flags (`make app VERSION=1 LED_COLOR=RED`). See
-  [system_boot.md](documentation/system_boot.md) for the expected result at each demo step.
+- [ ] Add the version LEDs to the application: v1 blinks red and v2 blinks
+      green, set by build flags (`make app VERSION=1 LED_COLOR=RED`). See
+      [system_boot.md](documentation/system_boot.md) for the expected result at
+      each demo step.
 - [ ] Build the boot attack demos as tests (0.5 day, by Nov 15): flipped byte,
   wrong signing key, tampered stage 2, old signed image, and an image that never
   confirms itself. See [Security demos](#security-demos).
@@ -367,25 +379,26 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
   nonce from the sequence number and never repeat one.
 - [ ] Put device identity signing behind a small interface and bring the link up
   with a software Ed25519 test key, so the ATECC608 can't block the link.
-- [ ] Add encryption and authentication to the daemon, and carry the `set` command
-  over the encrypted link.
+- [ ] Add encryption and authentication to the daemon, and carry the `set`
+      command over the encrypted link.
 - [ ] Add security counters to telemetry and show them in the terminal stream
   (0.5 day): bad tags, replays and failed handshakes.
 - [ ] Add crypto test coverage (0.5 day): published test vectors (RFC 8439, RFC
   7748, RFC 8032), nonces never repeating, and an injected RNG error stopping
   key generation.
 - [ ] Bring up I2C2 (PF0, PF1) to the ATECC608 and port CryptoAuthLib, then move
-  the device identity to it: generate a P-256 key on the chip and lock it as
-  non-readable. Timebox this to 1 day after the link works on the test key; locking
-  is permanent. If it overruns, ship the test key and state the limit in the threat
-  model.
+      the device identity to it: generate a P-256 key on the chip and lock it as
+      non-readable. Timebox this to 1 day after the link works on the test key;
+      locking is permanent. If it overruns, ship the test key and state the
+      limit in the threat model.
 - [ ] Add the ATECC608 key-read demo (0.25 day): reading the private key slot is
   refused, while the chip can still produce a valid signature.
-- [ ] Add firmware loading over TFTP (1 day): enable lwIP's TFTP server only after an
-  authenticated "update" command, write the image to the inactive QSPI slot, then
-  restart into stage 2. See
-  [peripheral_ETH.md](documentation/peripheral_ETH.md#loading-firmware-images-with-tftp).
-  Until this exists, load Week 2 test images with a debug method such as J-Link.
+- [ ] Add firmware loading over TFTP (1 day): enable lwIP's TFTP server only
+      after an authenticated "update" command, write the image to the inactive
+      QSPI slot, then restart into stage 2. See
+      [peripheral_ETH.md](documentation/peripheral_ETH.md#loading-firmware-images-with-tftp).
+      Until this exists, load Week 2 test images with a debug method such as
+      J-Link.
 
 **Notes:**
 
@@ -393,32 +406,35 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 
 **Status:** Not started
 
-- [ ] Hardware-in-the-loop tests with local pytest, run from the laptop: flash the
-  board through the J-Link, read output over RTT, send commands over SSH to the
-  daemon, and verify telemetry and the soft realtime limits.
+- [ ] Hardware-in-the-loop tests with local pytest, run from the laptop: flash
+      the board through the J-Link, read output over RTT, send commands over SSH
+      to the daemon, and verify telemetry and the soft realtime limits.
 - [ ] Fault injection: dropped link, CANopen module lost. Bad signatures,
   corrupted frames and replayed packets are covered by the security demos.
-- [ ] Build the attacker tool on the Pi 5 (0.5 day, Nov 23): one Python UDP proxy
-  between the STM32 and the daemon, with `replay`, `flip-bit` and `swap-key` modes.
+- [ ] Build the attacker tool on the Pi 5 (0.5 day, Nov 23): one Python UDP
+      proxy between the STM32 and the daemon, with `replay`, `flip-bit` and
+      `swap-key` modes.
 - [ ] Build the link attack demos as tests (0.5 day, Nov 24): the link rows in
-  [Security demos](#security-demos). Capture with `tcpdump` on the Pi and view the
-  result in Wireshark on the laptop.
+      [Security demos](#security-demos). Capture with `tcpdump` on the Pi and
+      view the result in Wireshark on the laptop.
 - [ ] Add a scripted demo runner and a README table of feature, attack, expected
   result and test link (0.5 day, Nov 25).
 - [ ] GitHub Actions: add lint and static analysis (cppcheck or clang-tidy).
 - [ ] Finish the README and the docs in `documentation/`: architecture diagram,
-  threat model, flash layout, design notes, test results, and lessons learned. The
-  threat model must state this board's limits: any running code can ask the
-  ATECC608 to sign, session keys sit in RAM without isolation, RDP level 1 can be
-  defeated in a lab, and the I2C wires can be sniffed or spoofed unless protected.
+      threat model, flash layout, design notes, test results, and lessons
+      learned. The threat model must state this board's limits: any running code
+      can ask the ATECC608 to sign, session keys sit in RAM without isolation,
+      RDP level 1 can be defeated in a lab, and the I2C wires can be sniffed or
+      spoofed unless protected.
 - [ ] Record a 2 to 3 minute demo video showing a CANopen input change at the
-  ground station, an output set by command, and five attacks: tampered image
-  refused and old signed image refused (with the LEDs showing the running version),
-  Wireshark capture showing only ciphertext, replayed command rejected, and a
-  man-in-the-middle handshake failing.
-- [ ] Optional, only after the video is recorded: a minimal out-of-tree I2C kernel
-  driver and device tree overlay for the IMU on the Pi 5. Timebox to 2 to 3 days,
-  and don't use the buffer days. Stop at the timebox even if it isn't finished.
+      ground station, an output set by command, and five attacks: tampered image
+      refused and old signed image refused (with the LEDs showing the running
+      version), Wireshark capture showing only ciphertext, replayed command
+      rejected, and a man-in-the-middle handshake failing.
+- [ ] Optional, only after the video is recorded: a minimal out-of-tree I2C
+      kernel driver and device tree overlay for the IMU on the Pi 5. Timebox to
+      2 to 3 days, and don't use the buffer days. Stop at the timebox even if it
+      isn't finished.
 - [ ] Buffer days (Nov 30 to Dec 2) for slippage.
 
 If behind schedule, skip the optional driver first, then cut the ATECC608 (ship
@@ -444,10 +460,10 @@ is pointed at the attacker tool on the Pi 5, which forwards to the daemon.
 | Replay protection       | Set DO2 to 0, then resend a captured "DO2 = 1"        | DO2 stays 0, counter goes up                  | Week 4   |
 | Man-in-the-middle       | Swap the X25519 public key in transit                 | Signature check fails, no session is set up   | Week 4   |
 
-The boot demos also show the result on the red and green version LEDs. Covered by
-tests rather than live demos: algorithm test vectors, nonces never
-repeating, and RNG error handling. Forward secrecy is a design property, stated in
-the README without a demo.
+The boot demos also show the result on the red and green version LEDs. Covered
+by tests rather than live demos: algorithm test vectors, nonces never repeating,
+and RNG error handling. Forward secrecy is a design property, stated in the
+README without a demo.
 
 Guardrails:
 
@@ -486,8 +502,8 @@ partly shown:
 - **Yocto:** low-level Linux is shown only if the optional driver gets built.
 - **Hardware tests run by GitHub Actions:** hardware tests are still automated
   with local pytest, and CI still runs builds, unit tests and static analysis.
-- **Others:** NUCLEO-H563ZI port, Verilog/HDL, GUI, MCUboot, mbedTLS, Pi 4, classic
-  SPI, CMake and Ninja, and Pi-side CAN.
+- **Others:** NUCLEO-H563ZI port, Verilog/HDL, GUI, MCUboot, mbedTLS, Pi 4,
+  classic SPI, CMake and Ninja, and Pi-side CAN.
 
 ## Résumé framing
 
@@ -495,62 +511,71 @@ One line to use, adjusted to match what actually gets built:
 
 > Designed a secure telemetry system on STM32 with FreeRTOS, signed two-stage
 > A/B bootloader over QSPI flash, X25519 plus AEAD link encryption with an
-> ATECC608-backed device identity, CANopen I/O over CAN, an Ethernet-linked Linux
-> ground station, and automated hardware-in-the-loop testing.
+> ATECC608-backed device identity, CANopen I/O over CAN, an Ethernet-linked
+> Linux ground station, and automated hardware-in-the-loop testing.
 
-If the optional driver gets built, add "a custom I2C kernel driver and device tree
-overlay". Don't claim it otherwise. The posting requires this experience, so if
-it's skipped, say plainly that kernel work is something to grow into.
+If the optional driver gets built, add "a custom I2C kernel driver and device
+tree overlay". Don't claim it otherwise. The posting requires this experience,
+so if it's skipped, say plainly that kernel work is something to grow into.
 
 When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
-- **Nov 5, 2026:** Configured in CubeMX: the UART (USART1 on PA9 and PB7), the red and green
-  LEDs on PI3 and PI2, the user button on PI11, HSE in bypass mode, QSPI flash size, clock and
-  chip select time, the 48 MHz RNG clock, the FreeRTOS overflow and malloc-failed checks, and a
-  4096-byte `tcpip_thread` stack. Confirmed the board is `MB1191-B-04` with the Micron N25Q128A
-  flash, and added docs for QSPI, oscillators and lwIP. Switched the PLL to HSE, keeping 216 MHz,
-  and restored CAN retransmission and bus-off. Re-enabled the CAN interrupts, which had been
-  dropped. Still open, in TODO.md: the QSPI MPU region, the `EthIf` stack and the hook bodies.
-- **Nov 5, 2026:** Moved outstanding questions and the remaining CubeMX settings into
-  [TODO.md](TODO.md). Weekly tasks stay here.
-- **Nov 4, 2026:** Rechecked after the latest CubeMX regeneration. QSPI pins, the 32,768-byte
-  heap, CAN retransmission, bus-off and the RNG are now in the code. Found that the MPU
-  region also blocks the QSPI registers, which should fault at startup, and made that the
-  first Week 1 fix. Settled three items from RM0385 and the schematic: HSE needs bypass mode,
-  the Ethernet DMA can reach DTCM, and 25 MHz is a legal RNG clock.
-- **Nov 4, 2026:** Cross-checked the docs against the `.ioc`, generated code, linker map
-  and UM1907. Added fixes to Week 1: wrong QSPI pins, HSI as the clock source, the RNG
-  clock, and undersized lwIP stacks. Noted that the MPU blocks memory-mapped QSPI, and that
-  the RX buffers don't fit in SRAM2, so their placement is now an open decision.
-- **Nov 4, 2026:** Did the first pass of the CubeMX setup and regenerated the code: CAN1 on
-  PB8 and PB9, TIM6 as the HAL time base, final interrupt priorities, thread stacks,
-  instruction cache on, and LD1 on PI1 for the blink test. It builds with no warnings
-  but hasn't run on the board. Added the remaining settings to Week 1, including a heap
-  too small for the lwIP threads. Pointed the build layout at the real CubeMX folder.
-- **Nov 4, 2026:** Reflashed the on-board ST-LINK with J-Link firmware and confirmed an
-  SWD connection to the Cortex-M7. Flashing, RTT, SystemView and UART aren't tested yet.
-- **Nov 3, 2026:** Turned the data cache off, so DMA needs no MPU regions or cache
-  maintenance, and turned the instruction cache on. Revisit only if crypto is too slow.
-- **Nov 3, 2026:** Chose TFTP for loading firmware images over the network, kept off
-  until an authenticated command turns it on. Added a 1-day task to Week 3.
-- **Nov 3, 2026:** Checked CAN access against the board schematic. CAN1 is reachable
-  on PB8 and PB9 but clashes with I2C1, so the ATECC608 moves to I2C2 on PF0
-  and PF1, which still needs a physical wiring route. Added pin assignments, a CAN
-  fallback on CN13, and a Week 1 hardware test. CAN is not yet tested on hardware.
-- **Nov 3, 2026:** Switched from CMake and Ninja to hand-written Makefiles alongside
-  CubeMX's, and added the build layout. Added `embedded_dev_tooling` as a submodule,
-  with tools found through `PATH`. Added red and green version LEDs on two spare
-  outputs. Separate docs now live in `documentation/`, so they're no longer out of
-  scope.
-- **Nov 2, 2026:** Made the kernel driver and overlay optional: only after the video
-  is recorded, timeboxed to 2 to 3 days, and first to skip if behind.
+- **Nov 5, 2026:** Configured in CubeMX: the UART (USART1 on PA9 and PB7), the
+  red and green LEDs on PI3 and PI2, the user button on PI11, HSE in bypass
+  mode, QSPI flash size, clock and chip select time, the 48 MHz RNG clock, the
+  FreeRTOS overflow and malloc-failed checks, and a 4096-byte `tcpip_thread`
+  stack. Confirmed the board is `MB1191-B-04` with the Micron N25Q128A flash,
+  and added docs for QSPI, oscillators and lwIP. Switched the PLL to HSE,
+  keeping 216 MHz, and restored CAN retransmission and bus-off. Re-enabled the
+  CAN interrupts, which had been dropped. Still open, in TODO.md: the QSPI MPU
+  region, the `EthIf` stack and the hook bodies.
+- **Nov 5, 2026:** Moved outstanding questions and the remaining CubeMX settings
+  into [TODO.md](TODO.md). Weekly tasks stay here.
+- **Nov 4, 2026:** Rechecked after the latest CubeMX regeneration. QSPI pins,
+  the 32,768-byte heap, CAN retransmission, bus-off and the RNG are now in the
+  code. Found that the MPU region also blocks the QSPI registers, which should
+  fault at startup, and made that the first Week 1 fix. Settled three items from
+  RM0385 and the schematic: HSE needs bypass mode, the Ethernet DMA can reach
+  DTCM, and 25 MHz is a legal RNG clock.
+- **Nov 4, 2026:** Cross-checked the docs against the `.ioc`, generated code,
+  linker map and UM1907. Added fixes to Week 1: wrong QSPI pins, HSI as the
+  clock source, the RNG clock, and undersized lwIP stacks. Noted that the MPU
+  blocks memory-mapped QSPI, and that the RX buffers don't fit in SRAM2, so
+  their placement is now an open decision.
+- **Nov 4, 2026:** Did the first pass of the CubeMX setup and regenerated the
+  code: CAN1 on PB8 and PB9, TIM6 as the HAL time base, final interrupt
+  priorities, thread stacks, instruction cache on, and LD1 on PI1 for the blink
+  test. It builds with no warnings but hasn't run on the board. Added the
+  remaining settings to Week 1, including a heap too small for the lwIP threads.
+  Pointed the build layout at the real CubeMX folder.
+- **Nov 4, 2026:** Reflashed the on-board ST-LINK with J-Link firmware and
+  confirmed an SWD connection to the Cortex-M7. Flashing, RTT, SystemView and
+  UART aren't tested yet.
+- **Nov 3, 2026:** Turned the data cache off, so DMA needs no MPU regions or
+  cache maintenance, and turned the instruction cache on. Revisit only if crypto
+  is too slow.
+- **Nov 3, 2026:** Chose TFTP for loading firmware images over the network, kept
+  off until an authenticated command turns it on. Added a 1-day task to Week 3.
+- **Nov 3, 2026:** Checked CAN access against the board schematic. CAN1 is
+  reachable on PB8 and PB9 but clashes with I2C1, so the ATECC608 moves to I2C2
+  on PF0 and PF1, which still needs a physical wiring route. Added pin
+  assignments, a CAN fallback on CN13, and a Week 1 hardware test. CAN is not
+  yet tested on hardware.
+- **Nov 3, 2026:** Switched from CMake and Ninja to hand-written Makefiles
+  alongside CubeMX's, and added the build layout. Added `embedded_dev_tooling`
+  as a submodule, with tools found through `PATH`. Added red and green version
+  LEDs on two spare outputs. Separate docs now live in `documentation/`, so
+  they're no longer out of scope.
+- **Nov 2, 2026:** Made the kernel driver and overlay optional: only after the
+  video is recorded, timeboxed to 2 to 3 days, and first to skip if behind.
 - **Nov 2, 2026:** Applied time savers: removed Yocto, the H563 port, GitHub-run
   hardware tests, the Pi 4, classic SPI and separate design docs. Switched to a
   custom bootloader and Monocypher only. Moved CANopen and an unencrypted
-  end-to-end link into Week 1, and timeboxed the ATECC608. Trimmed the attack demos
-  to eight and added the daemon design. The kernel driver now targets the I2C IMU.
+  end-to-end link into Week 1, and timeboxed the ATECC608. Trimmed the attack
+  demos to eight and added the daemon design. The kernel driver now targets the
+  I2C IMU.
 - **Nov 2, 2026:** Added attack demos for each crypto feature, with development
   time in Weeks 2 to 4. Refocused the demo video on five attacks.
 - **Nov 2, 2026:** Revised against the Kepler posting. Removed all Verilog/HDL

@@ -1,16 +1,17 @@
 # Third-Party Notices
 
-A record of the third-party software this project uses or plans to use, its license,
-and where to find that license.
+A record of the third-party software this project uses or plans to use, its
+license, and where to find that license.
 
-Licenses were checked against each project's own license page on Nov 3, 2026, unless
-marked otherwise. Check them again when adding or upgrading a component, because
-terms can change between versions. This is a working record, not legal advice.
+Licenses were checked against each project's own license page on Nov 3, 2026,
+unless marked otherwise. Check them again when adding or upgrading a component,
+because terms can change between versions. This is a working record, not legal
+advice.
 
 ## Project license
 
-This project's own code is under the MIT License. See [LICENSE](LICENSE). Third-party
-software keeps its own license, as listed below.
+This project's own code is under the MIT License. See [LICENSE](LICENSE).
+Third-party software keeps its own license, as listed below.
 
 ## Software in the firmware
 
@@ -41,8 +42,8 @@ binary and their notices have to be kept.
 
 ## Development and test tools
 
-These don't ship in the firmware, so their licenses don't normally apply to the code
-they're used to build or check.
+These don't ship in the firmware, so their licenses don't normally apply to the
+code they're used to build or check.
 
 | Software                 | Used for            | License                                     | License text                                                                 | Status      |
 | ------------------------ | ------------------- | ------------------------------------------- | ---------------------------------------------------------------------------- | ----------- |
@@ -63,35 +64,39 @@ they're used to build or check.
 ## Conditions to follow
 
 - **CryptoAuthLib:** may be used only with Microchip products, which fits the
-  ATECC608. Any redistribution in source or binary form must include Microchip's terms
-  and disclaimer, so a public binary or source copy needs them.
-- **ST example projects:** most are under SLA0044, which is more restrictive than the
-  rest of the package. Only basic examples are BSD-3-Clause. Check the license of any
-  example used as a starting point before publishing code derived from it.
-- **J-Link OB firmware:** SEGGER allows it only with ST devices, on evaluation boards,
-  and for development or evaluation, not production. It comes without support. The
-  STM32F746G-DISCO is listed as supported, and it can be reverted to ST-LINK. This
-  project's board has been reflashed.
-- **SEGGER tools:** SEGGER's Friendly License allows non-commercial use, including
-  private individuals, hobby projects and self-study, but excludes developing products
-  or services to sell. Its page doesn't address portfolio projects made while job
-  hunting, so ask SEGGER if a clear answer is needed.
-- **BSD, MIT and Apache components in the firmware:** keep their copyright notices, and
-  include them with any distributed binary. Apache-2.0 also has its own notice
-  requirements.
-- **GPL tools:** GNU Make, cppcheck and Wireshark are only run, not linked into the firmware. The
-  GCC Runtime Library Exception covers code built with the compiler. Publishing
-  copies of these tools themselves would bring GPL obligations.
-- **ST and other vendor documents:** datasheets and manuals are copyrighted by their
-  publishers. Check their terms before committing copies to a public repository, and
-  link to them otherwise. `vendors/st_microelectronics/` currently holds copies of the
-  board schematic, an annotated schematic, UM1907, RM0385 and DS10916, and `vendors/micron/` holds the flash datasheet, so check this before
-  the repository goes public.
+  ATECC608. Any redistribution in source or binary form must include Microchip's
+  terms and disclaimer, so a public binary or source copy needs them.
+- **ST example projects:** most are under SLA0044, which is more restrictive
+  than the rest of the package. Only basic examples are BSD-3-Clause. Check the
+  license of any example used as a starting point before publishing code derived
+  from it.
+- **J-Link OB firmware:** SEGGER allows it only with ST devices, on evaluation
+  boards, and for development or evaluation, not production. It comes without
+  support. The STM32F746G-DISCO is listed as supported, and it can be reverted
+  to ST-LINK. This project's board has been reflashed.
+- **SEGGER tools:** SEGGER's Friendly License allows non-commercial use,
+  including private individuals, hobby projects and self-study, but excludes
+  developing products or services to sell. Its page doesn't address portfolio
+  projects made while job hunting, so ask SEGGER if a clear answer is needed.
+- **BSD, MIT and Apache components in the firmware:** keep their copyright
+  notices, and include them with any distributed binary. Apache-2.0 also has its
+  own notice requirements.
+- **GPL tools:** GNU Make, cppcheck and Wireshark are only run, not linked into
+  the firmware. The GCC Runtime Library Exception covers code built with the
+  compiler. Publishing copies of these tools themselves would bring GPL
+  obligations.
+- **ST and other vendor documents:** datasheets and manuals are copyrighted by
+  their publishers. Check their terms before committing copies to a public
+  repository, and link to them otherwise. `vendors/st_microelectronics/`
+  currently holds copies of the board schematic, an annotated schematic, UM1907,
+  RM0385 and DS10916, and `vendors/micron/` holds the flash datasheet, so check
+  this before the repository goes public.
 
 ## Keeping this up to date
 
 When adding a component:
 
 1. Add a row with its license and a link to the license text.
-2. Record the version or commit once it's actually in use, and change its status.
+2. Record the version or commit once it's actually in use, and change its
+   status.
 3. Keep the original license file with any source copied into the repository.

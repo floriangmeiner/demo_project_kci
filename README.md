@@ -1,9 +1,9 @@
 # STM32 Secure Telemetry Link
 
 A demo project built to show that I can do the work described in Kepler
-Communications'
-[Embedded Software Designer role](https://jobs.lever.co/kepler/accae2f6-7ffe-49a8-a485-ee9c13421c95)
-in Toronto.
+Communications' [Embedded Software Designer
+role](https://jobs.lever.co/kepler/accae2f6-7ffe-49a8-a485-ee9c13421c95) in
+Toronto.
 
 An STM32 board plays the "spacecraft" and a Raspberry Pi 5 plays the "ground
 station". The STM32 boots only signed firmware, reads digital I/O from a CANopen
@@ -11,12 +11,13 @@ module over CAN, and sends that state to the Pi over an encrypted, authenticated
 Ethernet link. The Pi displays the state and can send commands back to set the
 module's outputs.
 
-**Status (Nov 5, 2026):** in progress, with a target of Dec 2, 2026. Week 1 of 4 is
-underway. The on-board debugger now runs J-Link firmware and connects to the chip. CAN,
-Ethernet, QSPI, the UART, the LEDs and the user button are configured in CubeMX, and the
-generated code builds, but a few settings are still open (see [TODO.md](TODO.md)). Nothing has
-run on the board yet, and no application code exists yet. Everything below describes the planned
-design. See [PLAN.md](PLAN.md) for the schedule.
+**Status (Nov 5, 2026):** in progress, with a target of Dec 2, 2026. Week 1 of 4
+is underway. The on-board debugger now runs J-Link firmware and connects to the
+chip. CAN, Ethernet, QSPI, the UART, the LEDs and the user button are configured
+in CubeMX, and the generated code builds, but a few settings are still open (see
+[TODO.md](TODO.md)). Nothing has run on the board yet, and no application code
+exists yet. Everything below describes the planned design. See
+[PLAN.md](PLAN.md) for the schedule.
 
 ## Documentation
 
@@ -44,12 +45,12 @@ design. See [PLAN.md](PLAN.md) for the schedule.
 
 ## What the demo shows
 
-- A change on a CANopen input appears in a terminal stream on the Pi, updated every
-  500 ms, with stale data clearly flagged.
+- A change on a CANopen input appears in a terminal stream on the Pi, updated
+  every 500 ms, with stale data clearly flagged.
 - A command from the Pi sets a CANopen output over the encrypted link.
-- Attacks fail visibly: a tampered firmware image, an old signed image, a replayed
-  command, and a man-in-the-middle during the handshake are all rejected, and a
-  packet capture shows only ciphertext.
+- Attacks fail visibly: a tampered firmware image, an old signed image, a
+  replayed command, and a man-in-the-middle during the handshake are all
+  rejected, and a packet capture shows only ciphertext.
 
 ## Hardware architecture
 
@@ -94,14 +95,15 @@ The cryptography is explained in
 
 ## How the project maps to the job description
 
-See [documentation/job-description-to-project-mapping.md](documentation/job-description-to-project-mapping.md)
+See
+[documentation/job-description-to-project-mapping.md](documentation/job-description-to-project-mapping.md)
 for a table of what part of the project covers each requirement in the posting.
 
 ## Optional: Linux kernel integration
 
-If time remains after the demo video is recorded, I'll add a minimal out-of-tree I2C
-kernel driver and device tree overlay for an IMU on the Pi 5. This is my first kernel
-work, so it's timeboxed to protect the core demo.
+If time remains after the demo video is recorded, I'll add a minimal out-of-tree
+I2C kernel driver and device tree overlay for an IMU on the Pi 5. This is my
+first kernel work, so it's timeboxed to protect the core demo.
 
 ## Out of scope
 

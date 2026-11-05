@@ -1,22 +1,24 @@
 # lwIP Middleware
 
-How lwIP, the network stack, is set up on the STM32F746G-DISCO, what its main settings do, and a
-CubeMX labelling problem to watch for.
+How lwIP, the network stack, is set up on the STM32F746G-DISCO, what its main
+settings do, and a CubeMX labelling problem to watch for.
 
-Values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`), the generated
-`LWIP/Target/lwipopts.h`, and lwIP's defaults in `opt.h` where `lwipopts.h` doesn't set a value.
-Nothing has been tested on hardware.
+Values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`), the
+generated `LWIP/Target/lwipopts.h`, and lwIP's defaults in `opt.h` where
+`lwipopts.h` doesn't set a value. Nothing has been tested on hardware.
 
-> **CubeMX gotcha: `TCPIP_THREAD_STACKSIZE` and `DEFAULT_THREAD_STACKSIZE` are labelled
-> "Word(s)" but used as bytes.** Entering 4096 gives a 4096-byte stack, not 16,384 bytes. Find them
-> at Pinout & Configuration > Middleware and Software Packs > LWIP > Configuration > Key Options >
-> Infrastructure - Threading Options. See [Stack size units](#stack-size-units).
+> **CubeMX gotcha: `TCPIP_THREAD_STACKSIZE` and `DEFAULT_THREAD_STACKSIZE` are
+> labelled "Word(s)" but used as bytes.** Entering 4096 gives a 4096-byte stack,
+> not 16,384 bytes. Find them at Pinout & Configuration > Middleware and
+> Software Packs > LWIP > Configuration > Key Options > Infrastructure -
+> Threading Options. See [Stack size units](#stack-size-units).
 
 ## What lwIP is
 
-lwIP ("lightweight IP") is an open-source TCP/IP stack for small systems. It turns application
-data into Ethernet frames and back, and handles ARP, IPv4, ICMP, UDP and TCP along the way. ST's
-version, 2.1.2_Cube, comes with a port for FreeRTOS and the F7's Ethernet driver.
+lwIP ("lightweight IP") is an open-source TCP/IP stack for small systems. It
+turns application data into Ethernet frames and back, and handles ARP, IPv4,
+ICMP, UDP and TCP along the way. ST's version, 2.1.2_Cube, comes with a port for
+FreeRTOS and the F7's Ethernet driver.
 
 ```text
 linkTask (our code)
@@ -30,12 +32,14 @@ EthIf thread         wakes on the Ethernet interrupt
 Ethernet MAC and DMA ── LAN8742 PHY ── RJ45 ── Raspberry Pi 5
 ```
 
-[peripheral_ETH.md](peripheral_ETH.md) covers the Ethernet hardware, DMA and which protocols are
-on, and [middleware_RTOS.md](middleware_RTOS.md) covers how these threads fit with the application.
+[peripheral_ETH.md](peripheral_ETH.md) covers the Ethernet hardware, DMA and
+which protocols are on, and [middleware_RTOS.md](middleware_RTOS.md) covers how
+these threads fit with the application.
 
 ## Stack size units
 
-CubeMX's two stack size settings use different units, but show them the same way:
+CubeMX's two stack size settings use different units, but show them the same
+way:
 
 | Setting, as CubeMX names it | Path in CubeMX | Label shown | Actual unit | Why |
 | --------------------------- | -------------- | ----------- | ----------- | --- |
@@ -43,17 +47,17 @@ CubeMX's two stack size settings use different units, but show them the same way
 | `TCPIP_THREAD_STACKSIZE` (TCPIP Thread Stack Size) | Pinout & Configuration > Middleware and Software Packs > LWIP > Configuration > Key Options > Infrastructure - Threading Options | Word(s) | **Bytes** | `sys_arch.c` passes the number straight to `osThreadNew`, and `cmsis_os2.c` treats `stack_size` as bytes |
 | `DEFAULT_THREAD_STACKSIZE` (Default LwIP Thread Stack Size) | Same as `TCPIP_THREAD_STACKSIZE` | Word(s) | **Bytes** | Same code path as `TCPIP_THREAD_STACKSIZE` |
 
-CubeMX's help text for `TCPIP_THREAD_STACKSIZE` also says "Word 32 bits", with limits of 256 to
-8,192 words, so the help text is as misleading as the label.
+CubeMX's help text for `TCPIP_THREAD_STACKSIZE` also says "Word 32 bits", with
+limits of 256 to 8,192 words, so the help text is as misleading as the label.
 
-**What to do:** for the lwIP settings, enter the size you want in bytes, and ignore the "Word(s)"
-label. To check, look at the generated `lwipopts.h`: the number there is passed to the thread as
-bytes. This affects ST's CubeMX for FW_F7 V1.17.4 with CMSIS-RTOS v2, and may differ in other
-versions.
+**What to do:** for the lwIP settings, enter the size you want in bytes, and
+ignore the "Word(s)" label. To check, look at the generated `lwipopts.h`: the
+number there is passed to the thread as bytes. This affects ST's CubeMX for
+FW_F7 V1.17.4 with CMSIS-RTOS v2, and may differ in other versions.
 
-**Why it matters:** a stack a quarter of the expected size overflows easily. The overflow can
-corrupt other memory without an obvious error, which is the kind of bug that looks like a network or
-crypto fault.
+**Why it matters:** a stack a quarter of the expected size overflows easily. The
+overflow can corrupt other memory without an obvious error, which is the kind of
+bug that looks like a network or crypto fault.
 
 ## Threads
 
@@ -107,12 +111,16 @@ Why this change, and why here:
 | `LWIP_STATS` | 0 | CubeMX | lwIP's internal counters | Off; turn on to debug dropped packets |
 | `RECV_BUFSIZE_DEFAULT` | 2,000,000,000 | CubeMX | Limit on queued received data per connection | Effectively no limit; the mailbox size is the real limit |
 
-The 12 receive buffers and the Ethernet DMA descriptors are set in `ethernetif.c` and the HAL, not in
-lwIP. See [peripheral_ETH.md](peripheral_ETH.md#memory-placement).
+The 12 receive buffers and the Ethernet DMA descriptors are set in
+`ethernetif.c` and the HAL, not in lwIP. See
+[peripheral_ETH.md](peripheral_ETH.md#memory-placement).
 
 ## To check
 
-- `INTERFACE_THREAD_STACK_SIZE` in `ethernetif.c` is raised to 1024, and survives regenerating.
-- Measure each thread's free stack with `uxTaskGetStackHighWaterMark` once traffic is flowing. See
-  [Measuring stacks](middleware_RTOS.md#measuring-stacks).
-- Turn off `LWIP_TCP` once the UDP link works, and confirm the build still links.
+- `INTERFACE_THREAD_STACK_SIZE` in `ethernetif.c` is raised to 1024, and
+  survives regenerating.
+- Measure each thread's free stack with `uxTaskGetStackHighWaterMark` once
+  traffic is flowing. See [Measuring
+  stacks](middleware_RTOS.md#measuring-stacks).
+- Turn off `LWIP_TCP` once the UDP link works, and confirm the build still
+  links.

@@ -6,12 +6,12 @@ One line to use, adjusted to match what actually gets built:
 
 > Designed a secure telemetry system on STM32 with FreeRTOS, signed two-stage
 > A/B bootloader over QSPI flash, X25519 plus AEAD link encryption with an
-> ATECC608-backed device identity, CANopen I/O over CAN, an Ethernet-linked Linux
-> ground station, and automated hardware-in-the-loop testing.
+> ATECC608-backed device identity, CANopen I/O over CAN, an Ethernet-linked
+> Linux ground station, and automated hardware-in-the-loop testing.
 
-If the optional driver gets built, add "a custom I2C kernel driver and device tree
-overlay". Don't claim it otherwise. The posting requires this experience, so if
-it's skipped, say plainly that kernel work is something to grow into.
+If the optional driver gets built, add "a custom I2C kernel driver and device
+tree overlay". Don't claim it otherwise. The posting requires this experience,
+so if it's skipped, say plainly that kernel work is something to grow into.
 
 When applying, use the posting's title: "Embedded Software Designer".
 
@@ -65,5 +65,5 @@ Coverage describes the plan, not finished work:
 | Aerospace software                                 | Spacecraft and ground station framing only                              | Not covered |
 | RTL (Verilog/VHDL) and embedded SoCs               | No Verilog, VHDL or FPGA work; excluded by choice                       | Not covered |
 
-A project can't show the posting's experience requirements (4+ years, a degree) or
-cross-functional collaboration and mentoring, so those aren't mapped here.
+A project can't show the posting's experience requirements (4+ years, a degree)
+or cross-functional collaboration and mentoring, so those aren't mapped here.

@@ -2,9 +2,9 @@
 
 Where code, images and cryptographic material live in this system.
 
-This is the proposed layout, and nothing is built yet. Addresses and sizes may change.
-The sector map and RAM addresses match the reference manual (RM0385 Rev 9), which puts the
-1 KB OTP area at `0x1FF0F000`.
+This is the proposed layout, and nothing is built yet. Addresses and sizes may
+change. The sector map and RAM addresses match the reference manual (RM0385 Rev
+9), which puts the 1 KB OTP area at `0x1FF0F000`.
 
 ## Overview
 
@@ -45,27 +45,29 @@ QSPI is memory-mapped at `0x90000000` for reading.
 | `0x90210000` | 64 KB    | Update metadata, copy 2                             |
 | `0x90220000` | About 13.9 MB | Unused                                         |
 
-- **Slots:** one holds the last good image and the other receives the next update.
-  [system_boot.md](system_boot.md) describes how they're used.
-- **Metadata:** records which slot is active and whether an update is pending. Two
-  copies mean a power cut during a write can't lose both.
-- **Trust:** QSPI isn't protected, so anyone with the board could rewrite it. Images
-  aren't trusted until their signature passes, and a bad metadata value can only cause
-  a failed check or a recovery, never unsigned code running. Secrets never go here.
+- **Slots:** one holds the last good image and the other receives the next
+  update. [system_boot.md](system_boot.md) describes how they're used.
+- **Metadata:** records which slot is active and whether an update is pending.
+  Two copies mean a power cut during a write can't lose both.
+- **Trust:** QSPI isn't protected, so anyone with the board could rewrite it.
+  Images aren't trusted until their signature passes, and a bad metadata value
+  can only cause a failed check or a recovery, never unsigned code running.
+  Secrets never go here.
 
-**Flash chip:** this board (`MB1191-B-04`) should have the Micron N25Q128A, which is now obsolete,
-and later boards use different chips. The notes below are for the N25Q128A. See
-[Flash chip](peripheral_QSPI.md#flash-chip).
+**Flash chip:** this board (`MB1191-B-04`) should have the Micron N25Q128A,
+which is now obsolete, and later boards use different chips. The notes below are
+for the N25Q128A. See [Flash chip](peripheral_QSPI.md#flash-chip).
 
-- **Alignment:** the flash has 65,536 pages of 256 bytes and 256 sectors of 64 KB, each divided
-  into 4 KB subsectors. All the addresses above start on a 64 KB sector boundary, so erasing one
-  area can't touch its neighbour.
-- **Time to update a slot:** a 1 MB slot is 16 sectors and 4,096 pages. Erasing takes about 11
-  seconds, or 48 at most. Programming takes about 2 seconds, or 20 at most. Erase before the TFTP
-  transfer starts, as [peripheral_ETH.md](peripheral_ETH.md#loading-firmware-images-with-tftp)
-  says, and keep any watchdog from firing during these waits.
-- **Wear:** each sector is rated for at least 100,000 erase cycles, so the metadata copies won't
-  wear out in this demo.
+- **Alignment:** the flash has 65,536 pages of 256 bytes and 256 sectors of 64
+  KB, each divided into 4 KB subsectors. All the addresses above start on a 64
+  KB sector boundary, so erasing one area can't touch its neighbour.
+- **Time to update a slot:** a 1 MB slot is 16 sectors and 4,096 pages. Erasing
+  takes about 11 seconds, or 48 at most. Programming takes about 2 seconds, or
+  20 at most. Erase before the TFTP transfer starts, as
+  [peripheral_ETH.md](peripheral_ETH.md#loading-firmware-images-with-tftp) says,
+  and keep any watchdog from firing during these waits.
+- **Wear:** each sector is rated for at least 100,000 erase cycles, so the
+  metadata copies won't wear out in this demo.
 
 ## Where cryptographic material lives
 
@@ -83,8 +85,8 @@ and later boards use different chips. The notes below are for the N25Q128A. See
 
 ## Devices on the I2C bus
 
-**STM32 bus:** the ATECC608 is the only storage device planned, at 7-bit address `0x60`.
-There's no separate EEPROM in the design, because nothing needs one.
+**STM32 bus:** the ATECC608 is the only storage device planned, at 7-bit address
+`0x60`. There's no separate EEPROM in the design, because nothing needs one.
 
 The ATECC608 has its own internal EEPROM, split into these zones:
 
@@ -95,9 +97,9 @@ The ATECC608 has its own internal EEPROM, split into these zones:
 | OTP           | 64 bytes               | Unused                                             |
 | Counters      | 2 monotonic counters   | Option for the version counter                     |
 
-The exact slot assignment will be decided during provisioning. The ATECC608's I2C
-wires aren't protected, so someone with the board could watch or fake that traffic.
-The private key itself never crosses the bus.
+The exact slot assignment will be decided during provisioning. The ATECC608's
+I2C wires aren't protected, so someone with the board could watch or fake that
+traffic. The private key itself never crosses the bus.
 
 **Pi bus:** the only device is the IMU, used if the optional kernel driver gets
 built. It stores no project data.
@@ -111,19 +113,21 @@ built. It stores no project data.
 | SRAM2       | `0x2004C000` | 16 KB  | Ethernet DMA descriptors and buffers              |
 | Backup SRAM | `0x40024000` | 4 KB   | Reset reasons and fault log, kept across resets   |
 
-Backup SRAM avoids wearing out flash with fault logs. Its contents aren't secret and
-shouldn't be trusted without checking them, and secrets never go there.
+Backup SRAM avoids wearing out flash with fault logs. Its contents aren't secret
+and shouldn't be trusted without checking them, and secrets never go there.
 
 This table is the target, and three things don't match it yet:
 
-- **One RAM region:** the linker script treats all 320 KB as one region, starting in DTCM,
-  so the current build fills DTCM first and runs about 5 KB into SRAM1, ending at
-  `0x200115D0`. Splitting it needs linker script changes.
-- **Thread stacks:** they come from the FreeRTOS heap, so they live wherever the heap goes.
-  They can't be in DTCM while the heap is in SRAM1, unless the heap moves or `linkTask`
-  gets a static stack. See [middleware_RTOS.md](middleware_RTOS.md#memory).
-- **SRAM2:** 16 KB can't hold the 12 generated RX buffers, and the main stack starts at the
-  top of it. See [Memory placement](peripheral_ETH.md#memory-placement).
+- **One RAM region:** the linker script treats all 320 KB as one region,
+  starting in DTCM, so the current build fills DTCM first and runs about 5 KB
+  into SRAM1, ending at `0x200115D0`. Splitting it needs linker script changes.
+- **Thread stacks:** they come from the FreeRTOS heap, so they live wherever the
+  heap goes. They can't be in DTCM while the heap is in SRAM1, unless the heap
+  moves or `linkTask` gets a static stack. See
+  [middleware_RTOS.md](middleware_RTOS.md#memory).
+- **SRAM2:** 16 KB can't hold the 12 generated RX buffers, and the main stack
+  starts at the top of it. See [Memory
+  placement](peripheral_ETH.md#memory-placement).
 
 ## Not used
 

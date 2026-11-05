@@ -1,8 +1,8 @@
 # Cryptography
 
-This project uses five cryptographic techniques. They answer three questions: is this
-firmware genuine, who is on the other end of the link, and how is the traffic
-protected?
+This project uses five cryptographic techniques. They answer three questions: is
+this firmware genuine, who is on the other end of the link, and how is the
+traffic protected?
 
 ## Signing and encrypting
 
@@ -29,24 +29,24 @@ This protects the firmware.
 - **How it works:** the developer's laptop signs each firmware image with a
   private key. The STM32 holds only the public key, and it checks the signature
   before running the image.
-- **Why the private key stays off the board:** someone who steals the board can't
-  use it to sign malicious firmware.
-- **Why Ed25519:** it's a modern signature scheme that's fast in software and hard
-  to implement badly.
+- **Why the private key stays off the board:** someone who steals the board
+  can't use it to sign malicious firmware.
+- **Why Ed25519:** it's a modern signature scheme that's fast in software and
+  hard to implement badly.
 
 ### 2. Session keys (ephemeral X25519)
 
 This creates a shared secret for the link.
 
-- **How it works:** X25519 is a key exchange. Each side generates a temporary key
-  pair and sends over its public half, and both can then calculate the same
+- **How it works:** X25519 is a key exchange. Each side generates a temporary
+  key pair and sends over its public half, and both can then calculate the same
   secret. Someone watching the wire sees both public halves but can't calculate
   it.
 - **What "ephemeral" means:** the keys are new for each session and thrown away
   afterwards. Stealing a long-term key later doesn't unlock recorded traffic,
   which is called forward secrecy.
-- **The gap it leaves:** X25519 alone doesn't tell you who you're talking to. The
-  two identity items close that gap.
+- **The gap it leaves:** X25519 alone doesn't tell you who you're talking to.
+  The two identity items close that gap.
 
 ### 3. Traffic (ChaCha20-Poly1305)
 
@@ -65,20 +65,20 @@ shared secret.
 This proves the Pi is talking to the real STM32.
 
 - **How it works:** during the handshake, the ATECC608 signs the session's key
-  exchange using a private key that can't be read off the chip. The Pi checks that
-  signature in Python with the device's known public key.
-- **Why P-256:** it's the only curve the ATECC608 supports, so the hardware decides
-  this one.
+  exchange using a private key that can't be read off the chip. The Pi checks
+  that signature in Python with the device's known public key.
+- **Why P-256:** it's the only curve the ATECC608 supports, so the hardware
+  decides this one.
 
 ### 5. Ground station identity (Ed25519 on the Pi)
 
-This is the same check in the other direction, proving the STM32 is talking to the
-real ground station.
+This is the same check in the other direction, proving the STM32 is talking to
+the real ground station.
 
-- **How it works:** the Pi signs with its private key, stored in software, and the
-  STM32 checks it with Monocypher.
-- **Why not P-256 here too:** the STM32 would need extra P-256 code. Using Ed25519
-  lets it reuse what the bootloader already needs.
+- **How it works:** the Pi signs with its private key, stored in software, and
+  the STM32 checks it with Monocypher.
+- **Why not P-256 here too:** the STM32 would need extra P-256 code. Using
+  Ed25519 lets it reuse what the bootloader already needs.
 
 ## How they work together
 
@@ -92,6 +92,6 @@ Connect:   Both sides exchange temporary keys (X25519)
 Running:   Every packet is encrypted and tagged (ChaCha20-Poly1305)
 ```
 
-The signatures are what stop a man-in-the-middle attack. An attacker who swaps the
-temporary keys in transit changes what was signed, so the check fails and no
+The signatures are what stop a man-in-the-middle attack. An attacker who swaps
+the temporary keys in transit changes what was signed, so the check fails and no
 session is set up.

@@ -1,11 +1,11 @@
 # Ethernet Peripheral
 
-How Ethernet is set up on the STM32F746G-DISCO, using FreeRTOS, lwIP and DMA, to carry
-the encrypted UDP link to the Raspberry Pi 5.
+How Ethernet is set up on the STM32F746G-DISCO, using FreeRTOS, lwIP and DMA, to
+carry the encrypted UDP link to the Raspberry Pi 5.
 
-These values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`) and the
-generated code. Nothing has been tested on hardware, and the recommendations below are
-proposals until they're built and tested.
+These values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`)
+and the generated code. Nothing has been tested on hardware, and the
+recommendations below are proposals until they're built and tested.
 
 ## Settings
 
@@ -26,8 +26,9 @@ proposals until they're built and tested.
 | Data cache         | Not enabled                   | Good: off by decision, see [Caches](#caches) |
 | Instruction cache  | Enabled                       | Good: see [core_cortexM7.md](core_cortexM7.md) |
 
-CubeMX shows addresses with leading zeros, such as `010.001.001.123`. These are still
-decimal values. The Pi needs a static address on the same subnet, such as `10.1.1.1`.
+CubeMX shows addresses with leading zeros, such as `010.001.001.123`. These are
+still decimal values. The Pi needs a static address on the same subnet, such as
+`10.1.1.1`.
 
 ### Pins
 
@@ -43,12 +44,13 @@ decimal values. The Pi needs a static address on the same subnet, such as `10.1.
 | `TXD0`      | `PG13`    |
 | `TXD1`      | `PG14`    |
 
-These go to the on-board PHY and RJ45 connector CN9, so they don't need any wiring.
+These go to the on-board PHY and RJ45 connector CN9, so they don't need any
+wiring.
 
 ## Network protocols
 
-lwIP provides the network protocols. The values below come from the `.ioc`, or from
-lwIP's defaults where the `.ioc` and `lwipopts.h` don't list a setting.
+lwIP provides the network protocols. The values below come from the `.ioc`, or
+from lwIP's defaults where the `.ioc` and `lwipopts.h` don't list a setting.
 
 ### Enabled
 
@@ -71,27 +73,29 @@ Encrypted telemetry or command (our protocol, not part of lwIP)
       inside Ethernet (which MAC address on the cable)
 ```
 
-ARP and ICMP are helpers that work alongside this. They don't carry application data.
+ARP and ICMP are helpers that work alongside this. They don't carry application
+data.
 
-**Why UDP:** the link is soft real-time, and telemetry goes out every 500 ms. If a packet
-is lost, the next one replaces it, whereas TCP would hold up newer data while resending
-the old. Commands still need confirming, so the design adds its own command IDs and
-acknowledgements. UDP also doesn't protect data, which is what the AEAD encryption and
-replay protection are for.
+**Why UDP:** the link is soft real-time, and telemetry goes out every 500 ms. If
+a packet is lost, the next one replaces it, whereas TCP would hold up newer data
+while resending the old. Commands still need confirming, so the design adds its
+own command IDs and acknowledgements. UDP also doesn't protect data, which is
+what the AEAD encryption and replay protection are for.
 
-**Recommendation for TCP:** turn it off in lwIP if nothing ends up using it. That saves
-memory and removes code an attacker could reach over the link.
+**Recommendation for TCP:** turn it off in lwIP if nothing ends up using it.
+That saves memory and removes code an attacker could reach over the link.
 
-**Security note:** ARP and ICMP have no authentication, so someone on the link could fake
-their messages. That could disrupt traffic or redirect it, but they couldn't read or
-forge commands, because that protection comes from the encrypted link above them.
+**Security note:** ARP and ICMP have no authentication, so someone on the link
+could fake their messages. That could disrupt traffic or redirect it, but they
+couldn't read or forge commands, because that protection comes from the
+encrypted link above them.
 
 ### Loading firmware images with TFTP
 
-The Pi sends a signed image to a TFTP server in the running application, on UDP port
-69, using lwIP's TFTP server. This is the planned design, and it's untested. To turn it
-on, enable `LWIP_TFTP` in CubeMX and call `tftp_init` with the callbacks that write to
-QSPI.
+The Pi sends a signed image to a TFTP server in the running application, on UDP
+port 69, using lwIP's TFTP server. This is the planned design, and it's
+untested. To turn it on, enable `LWIP_TFTP` in CubeMX and call `tftp_init` with
+the callbacks that write to QSPI.
 
 ```text
 Pi: tftp put image.bin
@@ -105,20 +109,21 @@ Stage 2 verifies the signature and version, then installs the image
 
 Things to design for:
 
-- **TFTP has no security of its own.** It has no login or encryption, so anyone on the
-  link could try to send a file. An image without a valid signature is still refused at
-  boot, but someone could keep overwriting the inactive slot to disrupt an update. Keep
-  the server off until the ground station sends an authenticated "update" command over
-  the encrypted link, and turn it off again afterward.
-- **The image isn't secret.** TFTP sends it unencrypted, so a capture reveals the firmware.
-  That's acceptable here because no secrets are stored in images.
-- **Slow flash can stall the network.** lwIP's TFTP server runs on lwIP's raw API, so its
-  callbacks run in `tcpip_thread`. Erasing QSPI inside a callback would block all network
-  traffic, so erase the slot before the transfer starts.
-- **Only the application receives images.** The bootloader has no network code, which
-  keeps it small and easier to trust.
-- **An interrupted transfer must be harmless.** Only mark an update as pending after the
-  full image has arrived. The active slot is never touched.
+- **TFTP has no security of its own.** It has no login or encryption, so anyone
+  on the link could try to send a file. An image without a valid signature is
+  still refused at boot, but someone could keep overwriting the inactive slot to
+  disrupt an update. Keep the server off until the ground station sends an
+  authenticated "update" command over the encrypted link, and turn it off again
+  afterward.
+- **The image isn't secret.** TFTP sends it unencrypted, so a capture reveals
+  the firmware. That's acceptable here because no secrets are stored in images.
+- **Slow flash can stall the network.** lwIP's TFTP server runs on lwIP's raw
+  API, so its callbacks run in `tcpip_thread`. Erasing QSPI inside a callback
+  would block all network traffic, so erase the slot before the transfer starts.
+- **Only the application receives images.** The bootloader has no network code,
+  which keeps it small and easier to trust.
+- **An interrupted transfer must be harmless.** Only mark an update as pending
+  after the full image has arrived. The active slot is never touched.
 
 ### Turned off
 
@@ -135,20 +140,20 @@ Things to design for:
 
 ## DMA
 
-DMA isn't optional here. The F746's Ethernet controller has its own built-in DMA, and
-ST's driver only works through it. This is also the simplest setup.
+DMA isn't optional here. The F746's Ethernet controller has its own built-in
+DMA, and ST's driver only works through it. This is also the simplest setup.
 
-**Why CubeMX shows no DMA options for Ethernet:** CubeMX's DMA Settings tab is for the
-general-purpose DMA1 and DMA2 controllers, where you choose a stream and channel. The
-Ethernet controller doesn't use those. Its DMA is part of the Ethernet peripheral, so
-there's nothing to assign, and it's always in use. It's configured through descriptors
-and buffers instead: the driver sets them up, and [Memory placement](#memory-placement)
-covers where they go.
+**Why CubeMX shows no DMA options for Ethernet:** CubeMX's DMA Settings tab is
+for the general-purpose DMA1 and DMA2 controllers, where you choose a stream and
+channel. The Ethernet controller doesn't use those. Its DMA is part of the
+Ethernet peripheral, so there's nothing to assign, and it's always in use. It's
+configured through descriptors and buffers instead: the driver sets them up, and
+[Memory placement](#memory-placement) covers where they go.
 
 ### What DMA does
 
-DMA moves network data between the Ethernet controller and RAM without the CPU. A
-received frame takes this path:
+DMA moves network data between the Ethernet controller and RAM without the CPU.
+A received frame takes this path:
 
 ```text
 Frame arrives from the PHY
@@ -162,52 +167,56 @@ EthIf thread wakes and passes the frame to lwIP
 linkTask receives it from its UDP socket
 ```
 
-Sending works the other way: the driver points the DMA at the frame in RAM, and the DMA
-feeds it to the controller.
+Sending works the other way: the driver points the DMA at the frame in RAM, and
+the DMA feeds it to the controller.
 
 ### Why it helps this project
 
-- **The CPU is free for other work.** It doesn't have to copy each frame byte by byte,
-  so it stays available for crypto and CAN polling.
-- **A busy CPU doesn't lose frames straight away.** During a slow handshake calculation,
-  incoming frames still land in the receive buffers. Frames are only dropped if all the
-  buffers fill up.
-- **It suits FreeRTOS.** Threads can sleep until the interrupt says a frame has arrived,
-  so nothing wastes time checking for data.
+- **The CPU is free for other work.** It doesn't have to copy each frame byte by
+  byte, so it stays available for crypto and CAN polling.
+- **A busy CPU doesn't lose frames straight away.** During a slow handshake
+  calculation, incoming frames still land in the receive buffers. Frames are
+  only dropped if all the buffers fill up.
+- **It suits FreeRTOS.** Threads can sleep until the interrupt says a frame has
+  arrived, so nothing wastes time checking for data.
 - **There's less custom code.** ST's driver and lwIP port already work this way.
 
-Speed isn't the main reason. A telemetry packet every 500 ms wouldn't stress the CPU
-either way. The practical reason is that this is how the hardware and ST's driver work,
-and the other benefits come with it.
+Speed isn't the main reason. A telemetry packet every 500 ms wouldn't stress the
+CPU either way. The practical reason is that this is how the hardware and ST's
+driver work, and the other benefits come with it.
 
 ### What it costs
 
-- **Memory placement:** descriptors and buffers must go in the right RAM, using linker
-  sections. See [Memory placement](#memory-placement).
-- **Cache handling:** with the data cache on, the CPU and DMA can see different data.
-  Starting with it off avoids this. See [Caches](#caches).
-- **Harder debugging:** a wrong descriptor or buffer setting can stop traffic without
-  any obvious error.
+- **Memory placement:** descriptors and buffers must go in the right RAM, using
+  linker sections. See [Memory placement](#memory-placement).
+- **Cache handling:** with the data cache on, the CPU and DMA can see different
+  data. Starting with it off avoids this. See [Caches](#caches).
+- **Harder debugging:** a wrong descriptor or buffer setting can stop traffic
+  without any obvious error.
 - **RAM use:** the buffers take up RAM permanently.
 
 ## Recommended setup
 
-1. **Keep interrupt RX mode.** A dedicated Ethernet task sleeps until a frame arrives,
-   so it uses no CPU in between.
+1. **Keep interrupt RX mode.** A dedicated Ethernet task sleeps until a frame
+   arrives, so it uses no CPU in between.
 2. **Keep static IPs and DHCP off.** The Pi and the STM32 connect directly.
-3. **Use lwIP's `netconn` or socket API from a task.** This keeps network code out of
-   interrupts.
-4. **Decide where descriptors and buffers go.** See [Memory placement](#memory-placement).
-5. **Keep the data cache off and the instruction cache on.** See [Caches](#caches).
+3. **Use lwIP's `netconn` or socket API from a task.** This keeps network code
+   out of interrupts.
+4. **Decide where descriptors and buffers go.** See [Memory
+   placement](#memory-placement).
+5. **Keep the data cache off and the instruction cache on.** See
+   [Caches](#caches).
 
 ## Memory placement
 
-[system_memory.md](system_memory.md) plans to put descriptors and buffers in SRAM2 at
-`0x2004C000`, but that doesn't work with the generated code as it stands.
+[system_memory.md](system_memory.md) plans to put descriptors and buffers in
+SRAM2 at `0x2004C000`, but that doesn't work with the generated code as it
+stands.
 
-The generated code places the descriptors in sections named `.RxDescripSection` and
-`.TxDescripSection`, but `STM32F746xx_FLASH.ld` has no entries for them and has one 320 KB
-RAM region. The current build's linker map shows where everything ends up:
+The generated code places the descriptors in sections named `.RxDescripSection`
+and `.TxDescripSection`, but `STM32F746xx_FLASH.ld` has no entries for them and
+has one 320 KB RAM region. The current build's linker map shows where everything
+ends up:
 
 | Item                   | Size         | Address now  | Memory |
 | ---------------------- | ------------ | ------------ | ------ |
@@ -220,47 +229,49 @@ RAM region. The current build's linker map shows where everything ends up:
 
 Moving these to SRAM2 runs into two problems:
 
-- **Size:** SRAM2 is 16 KB, and the 12 RX buffers alone need 18.8 KB. About 10 buffers would
-  fit alongside the descriptors, with nothing else there.
-- **Main stack:** the stack used before the scheduler starts, and by interrupts afterward,
-  starts at the top of SRAM2 and grows down. It would need to move.
+- **Size:** SRAM2 is 16 KB, and the 12 RX buffers alone need 18.8 KB. About 10
+  buffers would fit alongside the descriptors, with nothing else there.
+- **Main stack:** the stack used before the scheduler starts, and by interrupts
+  afterward, starts at the top of SRAM2 and grows down. It would need to move.
 
-The lwIP heap address is fixed by `LWIP_RAM_HEAP_POINTER`, and the linker doesn't reserve
-it. Linked data currently ends at `0x200115D0`, so it's safe while other RAM use stays below
-it. Check it if the RAM layout changes.
+The lwIP heap address is fixed by `LWIP_RAM_HEAP_POINTER`, and the linker
+doesn't reserve it. Linked data currently ends at `0x200115D0`, so it's safe
+while other RAM use stays below it. Check it if the RAM layout changes.
 
-**Recommendation:** leave these where the linker puts them for the first bring-up, and get
-`ping` working. RM0385 section 2.1.10 lists SRAM1, SRAM2 and DTCM as targets of the Ethernet
-DMA, so all of today's locations are reachable. With the data cache off, there's no coherency
-reason to separate them. SRAM2 placement only becomes necessary if the data cache is turned
-on later, because that's what the MPU non-cacheable region would cover.
+**Recommendation:** leave these where the linker puts them for the first
+bring-up, and get `ping` working. RM0385 section 2.1.10 lists SRAM1, SRAM2 and
+DTCM as targets of the Ethernet DMA, so all of today's locations are reachable.
+With the data cache off, there's no coherency reason to separate them. SRAM2
+placement only becomes necessary if the data cache is turned on later, because
+that's what the MPU non-cacheable region would cover.
 
 ## Caches
 
-**Decision: the data cache is off.** With it off, the CPU and the Ethernet DMA always see
-the same data in RAM, so this whole type of bug can't happen, and no MPU regions or cache
-maintenance are needed to get Ethernet working. The demo traffic is light, and DTCM is
-fast without a cache, so the cost should be small. It can be revisited if crypto is
-measurably too slow. The details are below.
+**Decision: the data cache is off.** With it off, the CPU and the Ethernet DMA
+always see the same data in RAM, so this whole type of bug can't happen, and no
+MPU regions or cache maintenance are needed to get Ethernet working. The demo
+traffic is light, and DTCM is fast without a cache, so the cost should be small.
+It can be revisited if crypto is measurably too slow. The details are below.
 
 ### What a cache is
 
-A cache is a small, fast memory inside the Cortex-M7 that keeps copies of recently used
-data, because reading main memory is slower. The F746 has two:
+A cache is a small, fast memory inside the Cortex-M7 that keeps copies of
+recently used data, because reading main memory is slower. The F746 has two:
 
-- **Instruction cache:** holds copies of code. Code doesn't change while running, so it
-  can't go out of date in normal use.
-- **Data cache:** holds copies of data from RAM. With it on, a CPU write can stay in the
-  cache for a while before reaching RAM, and a CPU read can return the cached copy
-  without looking at RAM at all.
+- **Instruction cache:** holds copies of code. Code doesn't change while
+  running, so it can't go out of date in normal use.
+- **Data cache:** holds copies of data from RAM. With it on, a CPU write can
+  stay in the cache for a while before reaching RAM, and a CPU read can return
+  the cached copy without looking at RAM at all.
 
-This works without any special handling as long as the CPU is the only thing using that
-RAM.
+This works without any special handling as long as the CPU is the only thing
+using that RAM.
 
 ### Why the Ethernet DMA makes this harder
 
-The DMA reads and writes RAM directly and can't see the cache, so the CPU and the DMA
-can end up with different values for the same address. This can go wrong in two ways:
+The DMA reads and writes RAM directly and can't see the cache, so the CPU and
+the DMA can end up with different values for the same address. This can go wrong
+in two ways:
 
 ```text
 Sending: the DMA sends old data
@@ -272,14 +283,14 @@ Receiving: the CPU reads old data
   CPU reads the buffer          -> gets the old copy from the cache
 ```
 
-The same problem can affect descriptors, the small records the CPU and DMA use to pass
-buffers back and forth. It can look like corrupted frames, repeated old frames or
-traffic stopping. These bugs are hard to find because they depend on what's in the
-cache at the time, and they can seem to disappear when you change the code or attach a
-debugger.
+The same problem can affect descriptors, the small records the CPU and DMA use
+to pass buffers back and forth. It can look like corrupted frames, repeated old
+frames or traffic stopping. These bugs are hard to find because they depend on
+what's in the cache at the time, and they can seem to disappear when you change
+the code or attach a debugger.
 
-For this project, a corrupted frame would normally fail the AEAD tag check, so it would
-look like a crypto or network error rather than a cache problem.
+For this project, a corrupted frame would normally fail the AEAD tag check, so
+it would look like a crypto or network error rather than a cache problem.
 
 ### Where the cache matters in the Ethernet stack
 
@@ -305,19 +316,21 @@ ordinary CPU code.
 
 ### What we're doing
 
-1. **Keep the data cache off and the instruction cache on.** The instruction cache has no
-   coherency problem with the Ethernet DMA, and the demo traffic is light.
-2. **Get Ethernet working and measure crypto speed.** Only change this if crypto is
-   measurably too slow.
-3. **If the data cache is needed, use an MPU non-cacheable region** for the Ethernet part
-   of SRAM2, rather than manual maintenance. Check that the region covers every
-   descriptor and buffer, and retest all the link demos.
+1. **Keep the data cache off and the instruction cache on.** The instruction
+   cache has no coherency problem with the Ethernet DMA, and the demo traffic is
+   light.
+2. **Get Ethernet working and measure crypto speed.** Only change this if crypto
+   is measurably too slow.
+3. **If the data cache is needed, use an MPU non-cacheable region** for the
+   Ethernet part of SRAM2, rather than manual maintenance. Check that the region
+   covers every descriptor and buffer, and retest all the link demos.
 
 Turning the data cache on may not help as much as expected. DTCM, where
-[system_memory.md](system_memory.md) plans to keep stacks and session keys, is never cached and is
-already fast.
+[system_memory.md](system_memory.md) plans to keep stacks and session keys, is
+never cached and is already fast.
 
 ## To check on hardware
 
-- The FreeRTOS heap has room for the lwIP tasks, mailboxes and application tasks.
+- The FreeRTOS heap has room for the lwIP tasks, mailboxes and application
+  tasks.
 - The Pi can ping `10.1.1.123` over the direct cable.
