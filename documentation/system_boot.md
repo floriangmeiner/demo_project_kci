@@ -92,8 +92,9 @@ Each application version blinks its own LED, so the result of an update can be s
 on video without a debugger. RTT logs print the version as well.
 
 This takes two general-purpose outputs, each driving an external LED through a series
-resistor. The pins are still to be chosen, and must be spare 3.3 V pins that don't
-clash with CAN, I2C, Ethernet or QSPI (check UM1907).
+resistor: `PI3` (D7) for red and `PI2` (D8) for green. See
+[Pin assignments](../PLAN.md#pin-assignments). They're set in the CubeMX project, but the
+LEDs aren't wired yet.
 
 The colour belongs to the version, not the slot, and is set at build time. The source
 code is the same apart from these flags:

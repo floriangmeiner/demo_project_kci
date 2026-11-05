@@ -3,9 +3,8 @@
 How interrupt priorities are set on the STM32F746G-DISCO, using the Cortex-M7's Nested
 Vectored Interrupt Controller (NVIC).
 
-Current values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`). The
-recommended values below haven't been applied in CubeMX yet, and nothing has been tested
-on hardware.
+Values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`), and the generated
+code matches them. Nothing has been tested on hardware.
 
 ## How priorities work
 
@@ -32,15 +31,14 @@ in that range mustn't call FreeRTOS at all.
 
 ## Priorities
 
-| Interrupt                                 | IRQ number | Now | Recommended | Why                                                       |
-| ----------------------------------------- | ---------- | --- | ----------- | --------------------------------------------------------- |
-| `TIM6_DAC_IRQn` (HAL time base)           | 54         | Not set | 0       | Keeps the HAL tick running; calls no FreeRTOS functions   |
-| `CAN1_TX_IRQn`, `RX0`, `RX1`, `SCE`       | 19 to 22   | 5   | 5           | Highest level allowed to use FreeRTOS; little buffering   |
-| `ETH_IRQn`                                | 61         | 5   | 6           | Can wait, because its data is safe in the DMA buffers     |
-| `SysTick_IRQn`, `PendSV_IRQn`             | System     | 15  | 15          | FreeRTOS requires these to be lowest                      |
+| Interrupt                                 | IRQ number | Priority | Why                                                       |
+| ----------------------------------------- | ---------- | -------- | --------------------------------------------------------- |
+| `TIM6_DAC_IRQn` (HAL time base)           | 54         | 0        | Keeps the HAL tick running; calls no FreeRTOS functions   |
+| `CAN1_TX_IRQn`, `RX0`, `RX1`, `SCE`       | 19 to 22   | 5        | Highest level allowed to use FreeRTOS; little buffering   |
+| `ETH_IRQn`                                | 61         | 6        | Can wait, because its data is safe in the DMA buffers     |
+| `SysTick_IRQn`, `PendSV_IRQn`             | System     | 15       | FreeRTOS requires these to be lowest                      |
 
-The `.ioc` currently has SysTick as the HAL time base, and has no TIM6 interrupt. See
-[HAL time base](middleware_RTOS.md#hal-time-base).
+See [HAL time base](middleware_RTOS.md#hal-time-base) for why TIM6 is at priority 0.
 
 ## Why CAN is above Ethernet
 

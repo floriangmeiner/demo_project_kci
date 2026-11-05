@@ -3,9 +3,9 @@
 How Ethernet is set up on the STM32F746G-DISCO, using FreeRTOS, lwIP and DMA, to carry
 the encrypted UDP link to the Raspberry Pi 5.
 
-These values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`). The
-code hasn't been regenerated from them yet, and nothing has been tested on hardware.
-The recommendations below are proposals until they're built and tested.
+These values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`) and the
+generated code. Nothing has been tested on hardware, and the recommendations below are
+proposals until they're built and tested.
 
 ## Settings
 
@@ -13,7 +13,7 @@ The recommendations below are proposals until they're built and tested.
 | ------------------ | ----------------------------- | ------------------------------------------ |
 | Interface and PHY  | RMII, LAN8742                 | Good                                       |
 | RX mode            | Interrupt                     | Good: a task wakes when a frame arrives    |
-| Ethernet interrupt | On, priority 5                | Good: FreeRTOS `FromISR` calls are allowed |
+| Ethernet interrupt | On, priority 6                | Good: FreeRTOS `FromISR` calls are allowed |
 | lwIP               | 2.1.2 (ST's Cube version)     | Good                                       |
 | FreeRTOS           | CMSIS-RTOS v2                 | Good                                       |
 | DHCP               | Off                           | Good: the direct cable has no DHCP server  |
@@ -21,10 +21,10 @@ The recommendations below are proposals until they're built and tested.
 | Netmask            | `255.255.255.0`               | Good                                       |
 | Gateway            | `10.1.1.1`                    | Not needed on a direct cable, but harmless |
 | Default task stack | 1024 words (4 KB)             | Good if lwIP starts from this task         |
-| FreeRTOS heap      | 32 KB in the current code     | May be tight; check after regenerating     |
-| Descriptor and buffer addresses | Not set          | **To do:** see [Memory placement](#memory-placement) |
+| FreeRTOS heap      | 32,768 bytes                  | Good: see [Memory](middleware_RTOS.md#memory) |
+| Descriptor and buffer addresses | Not set          | **Open:** see [Memory placement](#memory-placement) |
 | Data cache         | Not enabled                   | Good: off by decision, see [Caches](#caches) |
-| Instruction cache  | Not enabled                   | **To do:** turn on                         |
+| Instruction cache  | Enabled                       | Good: see [core_cortexM7.md](core_cortexM7.md) |
 
 CubeMX shows addresses with leading zeros, such as `010.001.001.123`. These are still
 decimal values. The Pi needs a static address on the same subnet, such as `10.1.1.1`.
@@ -48,8 +48,7 @@ These go to the on-board PHY and RJ45 connector CN9, so they don't need any wiri
 ## Network protocols
 
 lwIP provides the network protocols. The values below come from the `.ioc`, or from
-CubeMX 6.18.1's lwIP defaults where the `.ioc` doesn't list a setting. Confirm them in
-`lwipopts.h` after regenerating.
+lwIP's defaults where the `.ioc` and `lwipopts.h` don't list a setting.
 
 ### Enabled
 
@@ -198,17 +197,43 @@ and the other benefits come with it.
 2. **Keep static IPs and DHCP off.** The Pi and the STM32 connect directly.
 3. **Use lwIP's `netconn` or socket API from a task.** This keeps network code out of
    interrupts.
-4. **Put descriptors and buffers in SRAM2.** See [Memory placement](#memory-placement).
-5. **Keep the data cache off and turn the instruction cache on.** See [Caches](#caches).
+4. **Decide where descriptors and buffers go.** See [Memory placement](#memory-placement).
+5. **Keep the data cache off and the instruction cache on.** See [Caches](#caches).
 
 ## Memory placement
 
-Descriptors and buffers go in SRAM2 at `0x2004C000`, matching [system_memory.md](system_memory.md).
+[system_memory.md](system_memory.md) plans to put descriptors and buffers in SRAM2 at
+`0x2004C000`, but that doesn't work with the generated code as it stands.
 
-The generated code places the descriptors in sections named `.RxDecripSection` and
-`.TxDecripSection`, but `STM32F746xx_FLASH.ld` has no entries for them, and has one
-320 KB RAM region. The linker script needs matching entries at the right addresses.
-This is a common reason lwIP doesn't work on the first try.
+The generated code places the descriptors in sections named `.RxDescripSection` and
+`.TxDescripSection`, but `STM32F746xx_FLASH.ld` has no entries for them and has one 320 KB
+RAM region. The current build's linker map shows where everything ends up:
+
+| Item                   | Size         | Address now  | Memory |
+| ---------------------- | ------------ | ------------ | ------ |
+| TX descriptors         | 160 bytes    | `0x20000088` | DTCM   |
+| RX descriptors         | 160 bytes    | `0x20000128` | DTCM   |
+| RX buffers, 12         | 18,819 bytes | `0x20000668` | DTCM   |
+| lwIP packet pool       | 9,731 bytes  | `0x2000E3BC` | Crosses from DTCM into SRAM1 |
+| lwIP heap              | 1,600 bytes  | `0x20048000` | SRAM1  |
+| Main stack (top)       | 1 KB minimum | `0x20050000` | SRAM2  |
+
+Moving these to SRAM2 runs into two problems:
+
+- **Size:** SRAM2 is 16 KB, and the 12 RX buffers alone need 18.8 KB. About 10 buffers would
+  fit alongside the descriptors, with nothing else there.
+- **Main stack:** the stack used before the scheduler starts, and by interrupts afterward,
+  starts at the top of SRAM2 and grows down. It would need to move.
+
+The lwIP heap address is fixed by `LWIP_RAM_HEAP_POINTER`, and the linker doesn't reserve
+it. Linked data currently ends at `0x200115D0`, so it's safe while other RAM use stays below
+it. Check it if the RAM layout changes.
+
+**Recommendation:** leave these where the linker puts them for the first bring-up, and get
+`ping` working. RM0385 section 2.1.10 lists SRAM1, SRAM2 and DTCM as targets of the Ethernet
+DMA, so all of today's locations are reachable. With the data cache off, there's no coherency
+reason to separate them. SRAM2 placement only becomes necessary if the data cache is turned
+on later, because that's what the MPU non-cacheable region would cover.
 
 ## Caches
 
@@ -280,8 +305,8 @@ ordinary CPU code.
 
 ### What we're doing
 
-1. **Keep the data cache off and turn the instruction cache on.** The instruction cache
-   has no coherency problem with the Ethernet DMA, and the demo traffic is light.
+1. **Keep the data cache off and the instruction cache on.** The instruction cache has no
+   coherency problem with the Ethernet DMA, and the demo traffic is light.
 2. **Get Ethernet working and measure crypto speed.** Only change this if crypto is
    measurably too slow.
 3. **If the data cache is needed, use an MPU non-cacheable region** for the Ethernet part
@@ -292,9 +317,7 @@ Turning the data cache on may not help as much as expected. DTCM, where
 [system_memory.md](system_memory.md) plans to keep stacks and session keys, is never cached and is
 already fast.
 
-## To check after regenerating
+## To check on hardware
 
-- A `LWIP` folder exists, and the Makefile includes it.
 - The FreeRTOS heap has room for the lwIP tasks, mailboxes and application tasks.
-- The linker map shows the descriptor sections at the intended SRAM2 addresses.
 - The Pi can ping `10.1.1.123` over the direct cable.

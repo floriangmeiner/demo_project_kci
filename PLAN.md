@@ -2,7 +2,7 @@
 
 **Window:** Nov 2 to Dec 2, 2026
 
-**Status:** Week 1 in progress (last updated Nov 3, 2026)
+**Status:** Week 1 in progress (last updated Nov 5, 2026)
 
 **Approach:** minimize effort and maximize demo impact. Anything that doesn't
 support the demo video or a stated requirement in the posting is a candidate to
@@ -64,9 +64,10 @@ Hardware (power supplies not shown; see [Pin assignments](#pin-assignments)):
 
 CAN1 is reachable on the Arduino header, but it uses the same two pins as the
 header's I2C1, so the ATECC608 moves to I2C2. **I2C2 has no wiring route yet** (see
-below). This comes from the board schematic (MB1191 rev B-02, `19176.pdf`), UM1907
-and CubeMX's pin data. It has **not been tested on hardware**, and the board's revision
-should be checked against the schematic.
+[TODO.md](TODO.md#hardware)). This comes from the
+[B-04 schematic](vendors/st_microelectronics/stm32f746g-disco/MB1191_B-04/mb1191-f746ngh6-b04-schematic.pdf),
+which matches this board's `MB1191-B-04` sticker, along with UM1907 and CubeMX's pin data. It
+has **not been tested on hardware**.
 
 | Function            | MCU pin | MCU ball | Header           | Notes                              |
 | ------------------- | ------- | -------- | ---------------- | ---------------------------------- |
@@ -76,13 +77,17 @@ should be checked against the schematic.
 | ATECC608 SDA (I2C2) | PF0     | D2       | None             | Also SDRAM FMC_A0; route open      |
 | Red LED             | PI3     | C13      | CN4 pin 8 (D7)   | Series resistor                    |
 | Green LED           | PI2     | C14      | CN7 pin 1 (D8)   | Series resistor                    |
+| LD1, on-board green | PI1     | D14      | CN7 pin 6 (D13)  | Active high; for the first blink test |
+| User button B1 (blue) | PI11  | F3       | None (on-board)  | Active high, with an on-board pull-down |
+| UART TX (USART1)    | PA9     | E15      | None (ST-LINK)   | Virtual COM port                   |
+| UART RX (USART1)    | PB7     | B5       | None (ST-LINK)   | Virtual COM port                   |
+| 25 MHz clock (HSE)  | PH0     | G1       | None (on-board)  | From X2, in bypass mode            |
 | 3.3 V, GND          | -       | -        | CN6 pins 4, 6    | ATECC608, transceiver logic supply |
 
 Constraints on these pins:
 
-- PB8 and PB9 also go to the camera connector and CN2 (the EXT/RF connector), so
-  keep both empty. The CubeMX project currently has CAN1 on PA12 and PD0, and must
-  move to PB8 and PB9.
+- PB8 and PB9 also go to the camera connector and CN2 (the I2C extension connector), so
+  keep both empty.
 - The on-board pull-ups suit CAN, but use a transceiver with 3.3 V logic, because a
   5 V RXD output would drive PB8 against a pull-up to 3.3 V. The owned transceivers'
   part number still needs checking.
@@ -100,13 +105,6 @@ Other CAN pins on this chip, and why they aren't used:
 **Fallback:** PA11 and PA12 reach CN13 through a USB filter chip (U18), so CAN could
 use a micro-USB breakout, which would leave I2C1 free for the ATECC608. It needs USB
 FS disabled and VBUS left unconnected, and CAN through that filter is untested.
-
-**Open item, I2C2 wiring:** PF0 and PF1 run only to the SDRAM address lines and have
-no header pin, so a physical way to reach them must be found before the ATECC608 can
-connect. Using them also means the SDRAM stays unused. I2C2's other pins are no
-easier: PB10, PB11 and PH4 go to the USB HS PHY, and PH5 to SDRAM write enable. If
-there's no practical route, the options are software I2C on spare header pins such
-as PG6 (D2) and PG7 (D4), or the CN13 fallback above.
 
 Data flow: CANopen IO module -> CAN -> STM32 -> encrypted Ethernet -> daemon on
 the Pi 5.
@@ -162,13 +160,8 @@ Link and commands:
   carry a command ID that the STM32 acknowledges, so a lost command can be
   retried safely.
 
-Open questions:
-
-- [ ] Which CANopen module is it, and how many DI and DO does it have? The plan
-  assumes the standard CiA 401 I/O profile (inputs at `0x6000`, outputs at
-  `0x6200`). Confirm this in the module's manual.
-- [ ] What should the outputs do if the link drops? Default until decided: turn
-  them off after a timeout.
+The CANopen module and the outputs' behavior on link loss are still open; see
+[TODO.md](TODO.md#hardware).
 
 ## Status at a glance
 
@@ -198,9 +191,11 @@ Open questions:
 - [x] Ethernet cable, connecting the Pi 5 and the STM32 directly with static IPs.
 - [x] Raspberry Pi 5 (owned): the "ground station", running Raspberry Pi OS.
 - [x] microSD card and power supply for the Pi 5.
-- [ ] Reflash the on-board ST-LINK with SEGGER's J-Link firmware, for flashing,
-  RTT and SystemView over one USB cable (check SEGGER's current terms and the
-  revert steps first). The J-Link Base (owned) isn't needed unless this fails.
+- [x] Reflash the on-board ST-LINK with SEGGER's J-Link firmware, for flashing,
+  RTT and SystemView over one USB cable. Done Nov 4: it shows as `J-Link STLink`
+  (firmware V21), and J-Link Commander connects over SWD and identifies the Cortex-M7.
+  Flashing, RTT and SystemView aren't tested yet. The J-Link Base (owned) isn't needed
+  unless this fails.
 - [ ] At least two ATECC608 secure-element breakouts on I2C (Adafruit #4314 or
   SparkFun Qwiic ATECC608A). Supports P-256 only. Locking is permanent, so a
   configuration mistake can use up a chip.
@@ -238,8 +233,10 @@ Open questions:
 
 ### Build layout
 
-Our Makefiles are hand-written. CubeMX's generated Makefile stays in `cube/` as the
-reference for new source files and flags, because regenerating may overwrite edits.
+Our Makefiles are hand-written. CubeMX's generated Makefile stays in
+`kepler_demo_stm32f746g-disco/` as the reference for new source files and flags,
+because regenerating may overwrite edits. Only that CubeMX project exists so far; the
+rest of this layout is planned.
 
 ```text
 Makefile          # builds all three programs, signs the app, runs tests
@@ -247,7 +244,7 @@ mk/common.mk      # shared compiler flags and rules
 stage1/Makefile   # sets the linker script and sources
 stage2/Makefile
 app/Makefile
-cube/             # CubeMX output: HAL, startup code, generated Makefile
+kepler_demo_stm32f746g-disco/  # CubeMX output: HAL, startup code, generated Makefile
 vendors/          # third-party source kept in this repo, including RTT
 ```
 
@@ -257,29 +254,40 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 
 **Status:** In progress
 
-- [ ] Order the remaining parts today: the secure elements, breadboard parts,
-  LEDs and resistors, microSD card, power supply and logic analyzer (shipping is
-  the biggest schedule risk).
+- [ ] Order the secure elements, the only parts still unticked under
+  [Materials](#materials) (shipping is the biggest schedule risk).
 - [x] Check on paper that the CAN pins are reachable and whether they clash with
   I2C. They are reachable and they do clash; see [Pin assignments](#pin-assignments).
   LED pins chosen.
-- [ ] Prove CAN on hardware before relying on it: change PB8 and PB9 to CAN1 in
-  CubeMX, confirm the transceiver has 3.3 V logic, and exchange frames with the
-  CANopen module, using the logic analyzer on TX and RX if it fails. If it doesn't
-  work, switch to the fallback on CN13.
+- [x] Do the first pass of the hardware setup in CubeMX and generate the code. Done
+  Nov 4: it builds with no warnings, but hasn't run on the board. Settings are in
+  [core_cortexM7.md](documentation/core_cortexM7.md),
+  [core_NVIC.md](documentation/core_NVIC.md),
+  [core_oscillators.md](documentation/core_oscillators.md),
+  [middleware_RTOS.md](documentation/middleware_RTOS.md),
+  [middleware_LWIP.md](documentation/middleware_LWIP.md),
+  [peripheral_CAN.md](documentation/peripheral_CAN.md),
+  [peripheral_ETH.md](documentation/peripheral_ETH.md),
+  [peripheral_QSPI.md](documentation/peripheral_QSPI.md) and
+  [peripheral_GPIO.md](documentation/peripheral_GPIO.md).
+- [ ] Finish the CubeMX settings, then regenerate. The list is in
+  [TODO.md](TODO.md#finish-the-cubemx-settings).
+- [ ] Prove CAN on hardware before relying on it: confirm the transceiver has 3.3 V
+  logic, and exchange frames with the CANopen module, using the logic analyzer on TX
+  and RX if it fails. If it doesn't work, switch to the fallback on CN13.
 - [ ] Note the CANopen module's bitrate, node ID, supply voltage and termination.
 - [ ] Set up VS Code and a Git repo, and confirm the tools with
   `toolchain.sh verify`.
-- [ ] Generate the project with CubeMX as a Makefile project, and add our own
-  `Makefile`, `mk/common.mk` and `app/Makefile`; flash, blink an LED, and print logs
-  over SEGGER RTT. Copy the RTT source into `vendors/`, because CI can't see
-  `~/.embedded-tools`.
+- [ ] Add our own `Makefile`, `mk/common.mk` and `app/Makefile` around the generated
+  project; flash, blink LD1 on PI1, and print logs over SEGGER RTT. Copy the RTT source
+  into `vendors/`, because CI can't see `~/.embedded-tools`.
 - [ ] GitHub Actions from the start: build firmware in a container pinned to the
   same compiler version as local (13.2.1) and run host unit tests with `make test`.
   CI doesn't check out the private submodule.
 - [ ] Bring up FreeRTOS with SEGGER SystemView tracing to see task timing and
   ISR latency.
-- [ ] Create the application threads, connected by queues:
+- [ ] Write the application threads, connected by queues. CubeMX generates their
+  creation code:
   - `defaultTask`: starts lwIP and the other threads, then exits or idles.
   - `canOpenTask`: CANopen I/O polling, heartbeat monitoring and applying output
     commands.
@@ -288,8 +296,9 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 
   See [middleware_RTOS.md](documentation/middleware_RTOS.md) for stack sizes and
   priorities.
-- [ ] Add an ISR-driven UART with DMA on the ST-LINK virtual COM port (confirm it
-  works with the J-Link firmware). The data cache stays off, so DMA buffers need no
+- [ ] Add an ISR-driven UART with DMA on the virtual COM port. It shows up as
+  `/dev/ttyACM0` with the J-Link firmware, but passing data still needs confirming. The
+  data cache stays off, so DMA buffers need no
   MPU regions or cache maintenance; see
   [peripheral_ETH.md](documentation/peripheral_ETH.md#caches).
 - [ ] Define a binary telemetry packet format, with no CRC on the link, because
@@ -298,9 +307,10 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 - [ ] Add a minimal hand-written CANopen master on the STM32: NMT start, SDO
   polling of the module's inputs, and heartbeat monitoring. Report module
   state in telemetry, including an unplugged module or a lost heartbeat.
-- [ ] Bring up UDP over lwIP from ST's example, with static IPs and a direct
-  cable to the Pi 5. Place Ethernet DMA descriptors and buffers in SRAM2 using linker
-  sections.
+- [ ] Bring up UDP over lwIP from ST's example, with static IPs (STM32 10.1.1.123, Pi
+  10.1.1.1) and a direct cable to the Pi 5. Decide where the Ethernet DMA descriptors and
+  buffers go, because the 12 generated RX buffers don't fit in SRAM2; see
+  [Memory placement](documentation/peripheral_ETH.md#memory-placement).
 - [ ] Write the first version of the daemon, unencrypted: the 500 ms terminal
   stream and the `set` command, so the CAN-to-terminal path and the output command
   work end to end.
@@ -313,6 +323,8 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 
 - [ ] Get the QSPI flash working, using ST's BSP: erase and write in indirect
   mode, then read back a test pattern in memory-mapped mode (which is read-only).
+  Memory-mapped reads need their own MPU region, because the current one blocks
+  `0x90000000`; see [MPU](documentation/core_cortexM7.md#mpu).
 - [ ] Design the flash layout: stage 1, stage 2 and the application in internal
   flash (1 MB, single bank, uneven sectors), and slot A, slot B and metadata in
   the 16 MB QSPI flash.
@@ -325,7 +337,7 @@ See [system_boot.md](documentation/system_boot.md) for what the three programs d
 - [ ] Add A/B update with rollback if the new image fails to confirm itself:
   stage the new image in QSPI, verify it, then copy it into internal flash.
 - [ ] Add a version counter so an old signed image cannot be reinstalled. Store
-  it outside QSPI (F7 OTP, to be confirmed in RM0385, or the ATECC608's
+  it outside QSPI (the F7's 1 KB OTP area, per RM0385, or the ATECC608's
   monotonic counter), or state the limit in the threat model.
 - [ ] Write the signing script in Python.
 - [ ] Add the version LEDs to the application: v1 blinks red and v2 blinks green,
@@ -494,6 +506,31 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 5, 2026:** Configured in CubeMX: the UART (USART1 on PA9 and PB7), the red and green
+  LEDs on PI3 and PI2, the user button on PI11, HSE in bypass mode, QSPI flash size, clock and
+  chip select time, the 48 MHz RNG clock, the FreeRTOS overflow and malloc-failed checks, and a
+  4096-byte `tcpip_thread` stack. Confirmed the board is `MB1191-B-04` with the Micron N25Q128A
+  flash, and added docs for QSPI, oscillators and lwIP. Switched the PLL to HSE, keeping 216 MHz,
+  and restored CAN retransmission and bus-off. Re-enabled the CAN interrupts, which had been
+  dropped. Still open, in TODO.md: the QSPI MPU region, the `EthIf` stack and the hook bodies.
+- **Nov 5, 2026:** Moved outstanding questions and the remaining CubeMX settings into
+  [TODO.md](TODO.md). Weekly tasks stay here.
+- **Nov 4, 2026:** Rechecked after the latest CubeMX regeneration. QSPI pins, the 32,768-byte
+  heap, CAN retransmission, bus-off and the RNG are now in the code. Found that the MPU
+  region also blocks the QSPI registers, which should fault at startup, and made that the
+  first Week 1 fix. Settled three items from RM0385 and the schematic: HSE needs bypass mode,
+  the Ethernet DMA can reach DTCM, and 25 MHz is a legal RNG clock.
+- **Nov 4, 2026:** Cross-checked the docs against the `.ioc`, generated code, linker map
+  and UM1907. Added fixes to Week 1: wrong QSPI pins, HSI as the clock source, the RNG
+  clock, and undersized lwIP stacks. Noted that the MPU blocks memory-mapped QSPI, and that
+  the RX buffers don't fit in SRAM2, so their placement is now an open decision.
+- **Nov 4, 2026:** Did the first pass of the CubeMX setup and regenerated the code: CAN1 on
+  PB8 and PB9, TIM6 as the HAL time base, final interrupt priorities, thread stacks,
+  instruction cache on, and LD1 on PI1 for the blink test. It builds with no warnings
+  but hasn't run on the board. Added the remaining settings to Week 1, including a heap
+  too small for the lwIP threads. Pointed the build layout at the real CubeMX folder.
+- **Nov 4, 2026:** Reflashed the on-board ST-LINK with J-Link firmware and confirmed an
+  SWD connection to the Cortex-M7. Flashing, RTT, SystemView and UART aren't tested yet.
 - **Nov 3, 2026:** Turned the data cache off, so DMA needs no MPU regions or cache
   maintenance, and turned the instruction cache on. Revisit only if crypto is too slow.
 - **Nov 3, 2026:** Chose TFTP for loading firmware images over the network, kept off

@@ -2,8 +2,8 @@
 
 How CAN1 is set up on the STM32F746G-DISCO to talk to the CANopen IO module.
 
-These values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`). The
-code hasn't been regenerated from them yet, and nothing has been tested on hardware.
+These values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`), and
+`MX_CAN1_Init` matches them. Nothing has been tested on hardware.
 
 ## Settings
 
@@ -19,6 +19,8 @@ code hasn't been regenerated from them yet, and nothing has been tested on hardw
 | Bit time              | 18 TQ, 2 µs  | Exactly 500 kbit/s                            |
 | Sample point          | 16/18        | 88.9%                                         |
 | Mode                  | Normal       | Sends and receives on the real bus            |
+| Automatic retransmission | Enabled   | A frame that hits an error or loses arbitration is sent again |
+| Automatic bus-off management | Enabled | The controller can rejoin the bus after heavy errors |
 
 PB8 and PB9 also go to CN2 and the camera connector, with 2.7 kohm pull-ups to 3.3 V.
 Both connectors stay empty, and the transceiver needs 3.3 V logic. See
@@ -56,11 +58,26 @@ gives 108 clock cycles per bit, and 87.5% needs a TQ count divisible by 8, which
 divide 108 evenly. 18 TQ can, and 88.9% is within the published range. A short bench
 bus has plenty of margin either way.
 
+## Clock accuracy
+
+Every CAN bit is timed from the APB1 clock, so nodes need accurate clocks to stay in step.
+The PLL now runs from HSE, fed by X2, the board's 25 MHz oscillator, rather than HSI, the
+chip's internal RC oscillator, which is much less accurate. The system clock stays at 216 MHz and
+APB1 at 54 MHz, so the settings above didn't change. See [core_oscillators.md](core_oscillators.md).
+
+- **HSE mode:** choose "BYPASS Clock Source". In the B-04 schematic (`mb1191-f746ngh6-b04-schematic.pdf`, PDF page 3), X2
+  is a complete oscillator module (NZ2520SB) whose output drives `PH0` through R30, and
+  `PH1` isn't connected. Crystal mode expects a crystal across both pins. See
+  [core_oscillators.md](core_oscillators.md).
+- **PLL values:** M = 25, N = 432, P = 2 and Q = 9 give 216 MHz, and 48 MHz on the PLLQ
+  output.
+
 ## Interrupts
 
-All four CAN1 interrupts are enabled at priority 5. That's the limit set by
-`configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY`, so their handlers may call FreeRTOS
-`FromISR` functions.
+All four CAN1 interrupts are enabled at priority 5, under System Core > NVIC. Priority 5 is the
+limit set by
+`configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY`, so their handlers may call FreeRTOS `FromISR`
+functions.
 
 The firmware's use of each one is planned, and node ID values depend on the module.
 
@@ -86,16 +103,15 @@ CubeMX enables the interrupts in the NVIC, but the firmware still has to:
 2. Call `HAL_CAN_ActivateNotification` for each interrupt source used.
 3. Call `HAL_CAN_Start`.
 
-## To check after regenerating
+## How the `.ioc` stores these settings
 
-These two settings aren't recorded in the `.ioc`, so CubeMX will use its defaults,
-which are believed to be off. Check them in `MX_CAN1_Init`, and set them in CubeMX so
-they survive regeneration:
+`MX_CAN1_Init` has both of these on:
 
-- **`AutoRetransmission`: on.** Otherwise a frame that hits an error or loses
-  arbitration is dropped instead of being sent again.
-- **`AutoBusOff`: on.** Otherwise the controller can stay off the bus after heavy
-  errors until the firmware restarts it.
+- **`AutoRetransmission = ENABLE`.** The `.ioc` stores this as `NART=ENABLE`, which looks
+  backwards. The name comes from the hardware's "no automatic retransmission" bit, but
+  CubeMX labels the setting "Automatic Retransmission", and the HAL clears that bit when
+  this is enabled.
+- **`AutoBusOff = ENABLE`.** The `.ioc` stores this as `ABOM=ENABLE`.
 
 ## Sources
 

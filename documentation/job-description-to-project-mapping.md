@@ -26,7 +26,7 @@ Coverage describes the plan, not finished work:
 
 - **Direct:** the project exercises this.
 - **Partial:** the project exercises part of this.
-- **Stretch:** only if time remains.
+- **Optional:** only if time remains.
 - **Not covered:** the project doesn't show this.
 
 ## Responsibilities
@@ -35,7 +35,7 @@ Coverage describes the plan, not finished work:
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------- |
 | Reliable embedded software for spacecraft and ground systems    | STM32 "spacecraft" firmware and Pi "ground station" daemon, as a lab analogue rather than flight work | Partial  |
 | Secure communications: encryption, authentication, key exchange | X25519 key exchange, ChaCha20-Poly1305, mutual authentication with signatures, replay protection   | Direct   |
-| Device drivers, kernel modules, hardware interfaces             | CAN, QSPI, I2C and UART on the STM32; a Linux kernel driver is the stretch goal                    | Partial  |
+| Device drivers, kernel modules, hardware interfaces             | CAN, QSPI, I2C and UART on the STM32; a Linux kernel driver is optional                            | Partial  |
 | Automated tests, validation tools, technical documentation      | Host unit tests, pytest hardware tests, attack tool, README and design notes                       | Direct   |
 
 ## Required skills
@@ -46,7 +46,7 @@ Coverage describes the plan, not finished work:
 | Interfaces such as SPI, I2C, UART and CAN              | QSPI flash, I2C to the ATECC608, UART console, CANopen over CAN                   | Direct   |
 | Embedded Linux and/or RTOS, including FreeRTOS         | FreeRTOS on the STM32; Raspberry Pi OS on the ground station                      | Direct   |
 | Build systems such as Yocto                            | Removed from scope to save time                                                   | Not covered |
-| Kernel modules, device drivers, device trees           | I2C kernel driver and device tree overlay for an IMU on the Pi                    | Stretch  |
+| Kernel modules, device drivers, device trees           | I2C kernel driver and device tree overlay for an IMU on the Pi                    | Optional |
 | Automated test frameworks, hardware/software integration | Hardware-in-the-loop tests with pytest, fault injection, CI builds and unit tests | Direct   |
 | System design, debugging, testing, performance analysis | Threat model and flash layout, Ozone fault debugging, 500 ms timing checks       | Direct   |
 | Git-based version control and code review              | Git and GitHub Actions; as a solo project, it has no peer review                  | Partial  |

@@ -11,8 +11,11 @@ module over CAN, and sends that state to the Pi over an encrypted, authenticated
 Ethernet link. The Pi displays the state and can send commands back to set the
 module's outputs.
 
-**Status (Nov 3, 2026):** in progress, with a target of Dec 2, 2026. Week 1 of 4 has
-started and no firmware exists yet, so everything below describes the planned
+**Status (Nov 5, 2026):** in progress, with a target of Dec 2, 2026. Week 1 of 4 is
+underway. The on-board debugger now runs J-Link firmware and connects to the chip. CAN,
+Ethernet, QSPI, the UART, the LEDs and the user button are configured in CubeMX, and the
+generated code builds, but a few settings are still open (see [TODO.md](TODO.md)). Nothing has
+run on the board yet, and no application code exists yet. Everything below describes the planned
 design. See [PLAN.md](PLAN.md) for the schedule.
 
 ## Documentation
@@ -20,14 +23,21 @@ design. See [PLAN.md](PLAN.md) for the schedule.
 | Document                                                                    | What it covers                                            |
 | --------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [Plan](PLAN.md)                                                             | Schedule, materials, build layout and security demos      |
+| [To do](TODO.md)                                                            | Outstanding questions and unfinished setup work           |
 | [Boot](documentation/system_boot.md)                                               | The three programs, slots A and B, and boot checks        |
 | [Cryptography](documentation/system_cryptography.md)                               | What each cryptographic technique does and why it's used  |
 | [Memory](documentation/system_memory.md)                                           | Flash and RAM layout, and where keys and images live      |
 | [Threat model](documentation/system_threat_model.md)                               | Assets, attackers, trust boundaries and security requirements |
+| [Cortex-M7](documentation/core_cortexM7.md)                                 | Instruction cache, core interface settings and the MPU    |
+| [Oscillators](documentation/core_oscillators.md)                            | Crystals vs. crystal oscillators, clock sources and HSE setup |
 | [NVIC](documentation/core_NVIC.md)                                          | Interrupt priorities and the FreeRTOS limit               |
 | [FreeRTOS middleware](documentation/middleware_RTOS.md)                     | Threads, stack sizes, priorities and thread rules         |
+| [lwIP middleware](documentation/middleware_LWIP.md)                         | lwIP threads, key settings and the CubeMX stack-size unit problem |
 | [Ethernet peripheral](documentation/peripheral_ETH.md)                      | Ethernet settings, DMA tradeoffs, memory and caches       |
 | [CAN peripheral](documentation/peripheral_CAN.md)                           | CAN1 pins, bit timing, sample point and interrupts        |
+| [QSPI peripheral](documentation/peripheral_QSPI.md)                         | QSPI settings, the flash size code, clock and pins        |
+| [UART peripheral](documentation/peripheral_UART.md)                         | What the UART is for, USART1 settings and DMA options        |
+| [GPIO peripheral](documentation/peripheral_GPIO.md)                         | GPIO pin settings and the LD1 wiring                      |
 | [Job mapping](documentation/job-description-to-project-mapping.md)          | What part of the project covers each posting requirement  |
 | [License](licensing/LICENSE)                                                | This project's license                                    |
 | [Third-party notices](licensing/third-party-notices.md)                     | Third-party software, its licenses and their conditions   |
@@ -62,11 +72,11 @@ design. See [PLAN.md](PLAN.md) for the schedule.
 | (update slots A and B)   |                  | (demos only)         |
 +---+--------------+-------+                  +--------+-------------+
     |              |                                   |
-    | I2C          | CAN TX/RX                         | I2C (stretch)
+    | I2C2         | CAN1: PB9 TX, PB8 RX              | I2C (optional)
     |              |                                   |
 +---+------+  +----+---------+                   +-----+--------+
 | ATECC608 |  | CAN          |                   | I2C IMU      |
-| P-256    |  | transceiver  |                   | (stretch:    |
+| P-256    |  | transceiver  |                   | (optional    |
 | identity |  +----+---------+                   | kernel       |
 | key      |       |                             | driver)      |
 +----------+       |                             +--------------+
@@ -87,7 +97,7 @@ The cryptography is explained in
 See [documentation/job-description-to-project-mapping.md](documentation/job-description-to-project-mapping.md)
 for a table of what part of the project covers each requirement in the posting.
 
-## Stretch goal: Linux kernel integration
+## Optional: Linux kernel integration
 
 If time remains after the demo video is recorded, I'll add a minimal out-of-tree I2C
 kernel driver and device tree overlay for an IMU on the Pi 5. This is my first kernel
