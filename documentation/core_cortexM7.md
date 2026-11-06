@@ -7,9 +7,8 @@ Values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`) and the
 generated `main.c`. Nothing has been tested on hardware, and the speedup hasn't
 been measured.
 
-> **Open issue, stops startup:** the current MPU setting blocks the QSPI
-> registers, so `MX_QUADSPI_Init` should fault before the scheduler starts. See
-> [MPU](#mpu).
+> **MPU status, Nov 6:** regions 1 to 6 and the fault handlers are in the code
+> and build, but haven't run on the board. See [MPU](#mpu).
 
 ## Settings
 
@@ -233,12 +232,32 @@ Notes:
 
 ### MemManage fault reporting
 
-The MemManage fault is already enabled by `HAL_MPU_Enable`, but the generated
-`MemManage_Handler` and `HardFault_Handler` are empty endless loops. Fill in
-both in `stm32f7xx_it.c`, in their `USER CODE` blocks, to record `SCB->CFSR`,
-`SCB->HFSR` and `SCB->MMFAR`, then stop. HardFault needs it too, because a
-stack guard hit ends up there (see above). Week 2's persistent fault log reuses
-this.
+The MemManage fault is already enabled by `HAL_MPU_Enable`. The generated
+`MemManage_Handler` and `HardFault_Handler` were empty endless loops, so as of
+Nov 6 both call `record_fault` in `stm32f7xx_it.c`, in `USER CODE` blocks.
+HardFault needs it too, because a stack guard hit ends up there, as do bus and
+usage faults, which aren't enabled.
+
+`record_fault` turns interrupts off, then saves these into the global
+`fault_record`:
+
+| Field | Register | Holds |
+| ----- | -------- | ----- |
+| `source` | - | 1 for HardFault, 2 for MemManage |
+| `cfsr` | `SCB->CFSR` | Which fault: MemManage, bus or usage, and why |
+| `hfsr` | `SCB->HFSR` | Whether a fault escalated to HardFault (`FORCED`) |
+| `mmfar` | `SCB->MMFAR` | The address that broke an MPU rule, if `MMARVALID` is set in `cfsr` |
+| `bfar` | `SCB->BFAR` | The address of a bus error, if `BFARVALID` is set in `cfsr` |
+
+If a debugger is attached, it then stops at a breakpoint. Without one, a
+breakpoint would itself fault, so it skips straight to the endless loop. The
+status bits are left set, so they can also be read live.
+
+To read a fault in Ozone: look at `fault_record` in the watch window, and use
+the call stack to see the code that faulted.
+
+`fault_record` is in normal RAM, so a reset clears it. Week 2's persistent
+fault log moves it to RAM that survives reset, and adds the reset reason.
 
 ### Tests
 

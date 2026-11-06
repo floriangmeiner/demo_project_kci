@@ -26,12 +26,21 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-
+/* Fault status registers captured by the fault handlers, for the debugger */
+typedef struct
+{
+  uint32_t source; /* Which handler ran: FAULT_SOURCE_* */
+  uint32_t cfsr;   /* Configurable Fault Status Register */
+  uint32_t hfsr;   /* HardFault Status Register */
+  uint32_t mmfar;  /* MemManage Fault Address, valid if CFSR MMARVALID is set */
+  uint32_t bfar;   /* BusFault Address, valid if CFSR BFARVALID is set */
+} fault_record_t;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define FAULT_SOURCE_HARDFAULT 1U
+#define FAULT_SOURCE_MEMMANAGE 2U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -41,17 +50,38 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+/* Read this in Ozone after a fault. Cleared at every reset for now; Week 2
+ * moves it to a region that survives reset. */
+volatile fault_record_t fault_record;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
-
+static void record_fault(uint32_t source);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/* Capture the fault status registers, then halt if a debugger is attached.
+ * Only reads SCB registers, which the MPU never blocks, and writes to RAM.
+ * The status bits are left set, so the debugger can also read them live. */
+static void record_fault(uint32_t source)
+{
+  __disable_irq();
 
+  fault_record.source = source;
+  fault_record.cfsr   = SCB->CFSR;
+  fault_record.hfsr   = SCB->HFSR;
+  fault_record.mmfar  = SCB->MMFAR;
+  fault_record.bfar   = SCB->BFAR;
+
+  /* A breakpoint with no debugger attached would itself fault, so only stop
+   * here when one is connected */
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) != 0U)
+  {
+    __BKPT(0);
+  }
+}
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -90,7 +120,8 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  /* Also catches escalated faults, such as a main stack guard hit */
+  record_fault(FAULT_SOURCE_HARDFAULT);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -105,7 +136,8 @@ void HardFault_Handler(void)
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
+  /* MPU violations land here */
+  record_fault(FAULT_SOURCE_MEMMANAGE);
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
   {

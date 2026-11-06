@@ -10,18 +10,6 @@ Nothing has run on the board yet, so every setting below is untested.
 
 Make these changes in CubeMX, in this order, then regenerate and rebuild:
 
-- [ ] **Add MPU regions 1 to 6.** Do this first. Region 1, for the QSPI
-      registers, is the urgent one: the current region 0 blocks them, so
-      `MX_QUADSPI_Init` should fault at startup, before any blink test can run.
-      The others are memory-mapped QSPI, RAM with no execute, read-only flash, a
-      null guard and a main stack guard. Values are in
-      [Regions](documentation/core_cortexM7.md#regions).
-- [ ] **Add MemManage fault reporting:** not in CubeMX. `HAL_MPU_Enable`
-      already enables the fault, so only the `MemManage_Handler` and
-      `HardFault_Handler` bodies are needed. Commit the CubeMX change first,
-      then add them in their `USER CODE` blocks.
-      See [MemManage fault
-      reporting](documentation/core_cortexM7.md#memmanage-fault-reporting).
 - [ ] **Fill in the two hook functions** in `freertos.c`. CubeMX generated them
       empty, so a detected overflow or failed allocation is ignored. See [What
       the hooks do now](documentation/middleware_RTOS.md#what-the-hooks-do-now).
@@ -29,6 +17,14 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
       `INTERFACE_THREAD_STACK_SIZE` from 350 to 1024 in the `USER CODE` block
       near the top of `LWIP/Target/ethernetif.c`. See [Raising the `EthIf`
       stack](documentation/middleware_LWIP.md#raising-the-ethif-stack).
+- [x] **Add MPU regions 1 to 6.** Done Nov 6, and in `MPU_Config`: QSPI
+      registers, memory-mapped QSPI, RAM with no execute, read-only flash, a
+      null guard and a main stack guard. Builds; not yet run on the board. See
+      [Regions](documentation/core_cortexM7.md#regions).
+- [x] **Add fault reporting.** Done Nov 6: `MemManage_Handler` and
+      `HardFault_Handler` save the fault registers in `fault_record` and stop
+      at a breakpoint when a debugger is attached. See [MemManage fault
+      reporting](documentation/core_cortexM7.md#memmanage-fault-reporting).
 - [x] **Enable lwIP's TFTP server.** Done Nov 5: `LWIP_TFTP` on, with
       32-character filenames. The callbacks and `tftp_init` are Week 3 code.
       See [lwIP's TFTP

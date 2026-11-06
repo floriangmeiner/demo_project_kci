@@ -8,8 +8,8 @@ and `MX_QUADSPI_Init` in `main.c` matches them. Definitions are from RM0385 Rev
 9, DS10916 Rev 5 and Micron's N25Q128A datasheet (Rev. T). Nothing has been
 tested on hardware, and the recommended values come from the datasheets.
 
-> **Open issue:** the MPU blocks the QSPI registers. See
-> [MPU](core_cortexM7.md#mpu).
+> **Fixed Nov 6, untested:** MPU regions 1 and 2 now allow the QSPI registers
+> and the memory-mapped window. See [MPU](core_cortexM7.md#mpu).
 
 ## Settings
 
@@ -302,5 +302,6 @@ The exact CubeMX values for both regions, and the rest of the MPU plan, are in
   flash. The MPU guards the registers with region 1.
 - **Memory-mapped mode:** the CPU reads flash addresses directly. The MPU guards
   the window with region 2.
-- **Current problem:** the existing region 0 blocks both ranges, so the first
-  write to the QSPI registers, in `MX_QUADSPI_Init`, should fault at startup.
+- **Region 0:** blocks both ranges on its own, so without regions 1 and 2 the
+  first write to the QSPI registers, in `MX_QUADSPI_Init`, would fault at
+  startup. Both regions are in the code as of Nov 6.
