@@ -69,48 +69,132 @@ The simplest option is to leave the cache off in both bootloader stages. See
 
 ## MPU
 
-CubeMX's "Speculation default mode" is enabled, which generates one MPU region
-in `MPU_Config`. It stops the CPU reaching addresses where nothing should be
-read speculatively.
+The MPU checks every CPU access against a set of regions, and faults if the
+access breaks a region's rules. This Cortex-M7 has 8 regions, numbered 0 to 7.
+Where regions overlap, the higher number wins. Addresses outside every region
+use the default memory map, because the control mode is "privileged default"
+(`MPU_PRIVILEGED_DEFAULT`).
 
-| Setting            | Value                                                    |
-| ------------------ | -------------------------------------------------------- |
-| Region             | 0, covering the full 4 GB                                |
-| Disabled sub-regions | `0x87`, which leaves the region's rules off for `0x00000000` to `0x5FFFFFFF` and `0xE0000000` up |
-| Blocked addresses  | `0x60000000` to `0xDFFFFFFF`, with no access             |
+**Decision, Nov 5:** set up all the application's regions now, in Week 1,
+together with MemManage fault reporting. Only the bootloader stages' own MPU
+setup waits for Week 2, because those programs don't exist yet.
 
-Internal flash, RAM and the peripherals at `0x40000000` to `0x5FFFFFFF` are
-outside the blocked range, so they aren't affected. Two QSPI ranges are inside
-it:
+### What it can and can't do here
 
-| Range                        | What it is                | What happens                            | When to fix |
-| ---------------------------- | ------------------------- | --------------------------------------- | ----------- |
-| `0xA0001000` to `0xA0001FFF` | QSPI control registers    | Every QSPI command, in any mode, faults | Now         |
-| `0x90000000` up              | Memory-mapped QSPI flash  | Memory-mapped reads fault               | Week 2      |
+Every thread runs privileged, because the build uses FreeRTOS's normal port,
+not FreeRTOS-MPU. Any code can rewrite the MPU, so it **isn't a wall between
+threads**. What it does give:
 
-**The first one stops startup.** `main()` calls `MPU_Config` first, and
-`MX_QUADSPI_Init` then writes to the QSPI registers. The region applies to
-privileged code too, and the MemManage fault isn't enabled, so this should
-become a HardFault before the scheduler starts. This comes from reading the code
-and RM0385's memory map, and hasn't been run on the board.
+- **Accidents fault at once:** a stray write to flash or a null pointer read
+  stops at the instruction that caused it, instead of corrupting data quietly.
+- **No code runs from RAM:** code injected into a buffer can't execute.
+- **The cause is recorded:** with the MemManage fault enabled, `SCB->MMFAR`
+  holds the faulting address, which points straight at the region involved.
 
-In CubeMX, under CORTEX_M7, add a higher-numbered region for each one. A
-higher-numbered region overrides a lower one where they overlap. These values
-are proposed and untested:
+Threat model R12 asks for the MPU to keep application threads out of boot and
+key memory, which needs FreeRTOS-MPU. That is out of scope, so R12 is a known
+limit. See [system_threat_model.md](system_threat_model.md#7-hardware-mapping).
 
-| Setting              | Registers (now)      | Flash (Week 2)         |
-| -------------------- | -------------------- | ---------------------- |
-| Region               | 1                    | 2                      |
-| Base address         | `0xA0001000`         | `0x90000000`           |
-| Size                 | 4 KB                 | 16 MB                  |
-| Sub-region disable   | `0x0`                | `0x0`                  |
-| TEX level            | 0                    | 1                      |
-| Access permission    | All access permitted | Read-only              |
-| Instruction access   | Disabled             | Disabled               |
-| Shareable            | Enabled              | Disabled               |
-| Cacheable            | Disabled             | Disabled               |
-| Bufferable           | Enabled              | Disabled               |
+### Why region 0 exists
 
-The first column makes the registers device memory, and the second makes the
-flash normal, non-cacheable memory that can't run code. Stage 2 needs both
-regions if it reads slots in memory-mapped mode.
+CubeMX's "Speculation default mode" generates region 0. The Cortex-M7 can read
+ahead speculatively, and a speculative read of external memory that isn't set
+up, such as the SDRAM at `0xC0000000`, can stall the bus. Region 0 blocks
+`0x60000000` to `0xDFFFFFFF`:
+
+| Setting              | Value                                                  |
+| -------------------- | ------------------------------------------------------ |
+| Base, size           | `0x0`, 4 GB                                            |
+| Disabled sub-regions | `0x87`, which turns the region off for `0x00000000` to `0x5FFFFFFF` and `0xE0000000` up |
+| Access               | None                                                   |
+
+Two QSPI ranges fall inside it. **The QSPI registers at `0xA0001000` stop
+startup:** `MX_QUADSPI_Init` writes to them, and with no MemManage fault
+enabled this becomes a HardFault before the scheduler starts. Memory-mapped
+QSPI at `0x90000000` is blocked too. Regions 1 and 2 below fix both. This
+comes from reading the code and RM0385's memory map, and hasn't been run on
+the board.
+
+### Regions
+
+All proposed and untested. CubeMX location: Pinout & Configuration > System
+Core > CORTEX_M7 > Parameter Settings > Cortex Memory Protection Unit Region
+N Settings.
+
+| # | Region | Base | Size | Access | Instruction access | TEX | Shareable | Cacheable | Bufferable |
+| - | ------ | ---- | ---- | ------ | ------------------ | --- | --------- | --------- | ---------- |
+| 0 | Speculation guard (exists) | `0x00000000` | 4 GB, sub-regions `0x87` | None | Disabled | 0 | Yes | No | No |
+| 1 | QSPI registers | `0xA0001000` | 4 KB | All access | Disabled | 0 | Yes | No | Yes |
+| 2 | QSPI flash, memory-mapped | `0x90000000` | 16 MB | Read-only | Disabled | 1 | No | No | No |
+| 3 | All RAM | `0x20000000` | 512 KB | All access | **Disabled** | 1 | No | No | No |
+| 4 | Internal flash | `0x08000000` | 1 MB | **Read-only** | Enabled | 0 | No | **Yes** | No |
+| 5 | Null guard | `0x00000000` | 1 KB | None | Disabled | 0 | Yes | No | No |
+| 6 | Main stack guard | `0x2004FC00` | 32 B | None | Disabled | 0 | Yes | No | No |
+| 7 | Spare | | | | | | | | |
+
+Sub-region disable is `0x0` for regions 1 to 6. In memory type terms, region 1
+is device memory, regions 2 and 3 are normal non-cacheable memory, region 4 is
+normal write-through memory, and regions 0, 5 and 6 are strongly ordered.
+
+Notes:
+
+- **Region 1:** device memory keeps register writes in order and unmerged.
+- **Region 2:** read-only because memory-mapped mode can't write anyway, so a
+  stray write faults instead of being lost. No code runs from QSPI, because
+  images are copied to internal flash first.
+- **Region 3:** the RAM is 320 KB, but region sizes are powers of two, and the
+  extra 192 KB is unused address space. The lwIP heap at `0x20048000` and the
+  Ethernet buffers stay readable and writable. Nothing in the code is placed
+  in RAM to run (no `__RAM_FUNC` users as of Nov 5).
+- **Region 4, a gotcha:** the instruction cache only caches regions marked
+  cacheable. Marking flash non-cacheable would silently lose the cache's
+  speedup. Read-only means the application can't program internal flash
+  through these addresses. It never needs to, because it writes images to
+  QSPI.
+- **Region 5:** a null pointer read lands in ITCM RAM at `0x0`, which the
+  linker script doesn't use, and returns junk without an error. The vector
+  table isn't there: `SystemInit` leaves `VTOR` alone, so it comes from the
+  BOOT_ADD0 option byte, whose default is `0x00200000`. Confirm `SCB->VTOR` on
+  the first run.
+- **Region 6:** after the scheduler starts, interrupt handlers use the main
+  stack, which grows down from `_estack` (`0x20050000`). The linker script
+  reserves 1 KB (`_Min_Stack_Size`), and this guard is its bottom 32 bytes, so
+  992 bytes are usable. If `_Min_Stack_Size` or the RAM layout changes, move the
+  guard to match. Thread stacks are checked by
+  `configCHECK_FOR_STACK_OVERFLOW`, not the MPU.
+
+### MemManage fault reporting
+
+Without this, every MPU violation shows up as a generic HardFault. Two pieces
+of user code, added after the regions:
+
+- Enable the MemManage fault after `MPU_Config()` in `main.c`, in a `USER CODE`
+  block: `SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk`.
+- Fill in `MemManage_Handler` in `stm32f7xx_it.c`: record `SCB->CFSR` and
+  `SCB->MMFAR`, then stop. Week 2's persistent fault log reuses this.
+
+### Tests
+
+Each test breaks one rule on purpose. They go in a debug build only, following
+the plan's guardrail on debug paths.
+
+| Test | Expected result |
+| ---- | --------------- |
+| Normal boot | No fault: QSPI init, Ethernet and the blink test all work |
+| Read `*(volatile uint32_t *)0` | MemManage fault, `MMFAR` = `0x0` |
+| Copy a `bx lr` instruction into a RAM buffer and call it | MemManage fault, instruction access violation |
+| Write to `0x08000000` | MemManage fault, `MMFAR` = `0x08000000` |
+| Write to `0x90000000` in memory-mapped mode | MemManage fault |
+| Deep recursion in an interrupt handler | MemManage fault at the main stack guard |
+
+If the first boot faults, read `CFSR` and `MMFAR` in Ozone. To rule a region
+out, turn off its Enable setting in CubeMX.
+
+### Later
+
+| Item | When |
+| ---- | ---- |
+| MPU setup in stage 1 and stage 2. Stage 2 needs internal flash writable to install images, and reads QSPI | Week 2 |
+| Stage 2 turns the MPU off before jumping, and the application's `MPU_Config` sets it up again | Week 2 |
+| Once the application moves to `0x08040000`, it must set `VTOR` itself | Week 2 |
+| Make the flash controller registers read-only after `SystemClock_Config`, so code can't change option bytes such as RDP or WRP. Can't be in CubeMX's `MPU_Config`, which runs before the clock setup writes the flash wait states | Optional |

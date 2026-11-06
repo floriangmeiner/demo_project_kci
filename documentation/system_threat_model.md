@@ -192,7 +192,11 @@ attackers but with a stated limit.
 |     | it as an oracle                |                                  |
 | R11 | RDP level 1 (partial,          | Product state "Closed" with a    |
 |     | glitchable)                    | regression password              |
-| R12 | WRP + MPU (FreeRTOS-MPU)       | TrustZone + MPU                  |
+| R12 | Partial: WRP on stage 1; the   | TrustZone + MPU                  |
+|     | MPU blocks code in RAM and     |                                  |
+|     | writes to flash, but every     |                                  |
+|     | thread is privileged, so it    |                                  |
+|     | doesn't separate threads       |                                  |
 | R13 | Any board                      | Any board                        |
 
 The F207 plus ATECC608 maps the same as the F746 column on every row, only

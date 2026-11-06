@@ -10,9 +10,16 @@ Nothing has run on the board yet, so every setting below is untested.
 
 Make these changes in CubeMX, in this order, then regenerate and rebuild:
 
-- [ ] **Add an MPU region for the QSPI registers.** Do this first. The current
-      region blocks them, so `MX_QUADSPI_Init` should fault at startup, before
-      any blink test can run. See [MPU](documentation/core_cortexM7.md#mpu).
+- [ ] **Add MPU regions 1 to 6.** Do this first. Region 1, for the QSPI
+      registers, is the urgent one: the current region 0 blocks them, so
+      `MX_QUADSPI_Init` should fault at startup, before any blink test can run.
+      The others are memory-mapped QSPI, RAM with no execute, read-only flash, a
+      null guard and a main stack guard. Values are in
+      [Regions](documentation/core_cortexM7.md#regions).
+- [ ] **Add MemManage fault reporting:** not in CubeMX. Commit the CubeMX
+      change first, then add the `USER CODE` for the enable and the handler.
+      See [MemManage fault
+      reporting](documentation/core_cortexM7.md#memmanage-fault-reporting).
 - [ ] **Fill in the two hook functions** in `freertos.c`. CubeMX generated them
       empty, so a detected overflow or failed allocation is ignored. See [What
       the hooks do now](documentation/middleware_RTOS.md#what-the-hooks-do-now).
@@ -20,8 +27,6 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
       `INTERFACE_THREAD_STACK_SIZE` from 350 to 1024 in the `USER CODE` block
       near the top of `LWIP/Target/ethernetif.c`. See [Raising the `EthIf`
       stack](documentation/middleware_LWIP.md#raising-the-ethif-stack).
-- [ ] **Add an MPU region for memory-mapped QSPI flash** before Week 2's
-      read-back. See [MPU](documentation/core_cortexM7.md#mpu).
 - [x] **Enable lwIP's TFTP server.** Done Nov 5: `LWIP_TFTP` on, with
       32-character filenames. The callbacks and `tftp_init` are Week 3 code.
       See [lwIP's TFTP
@@ -126,7 +131,9 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
     write-protected stage 1.
 - [ ] **Should these threat model requirements be built, or marked as known
       limits?**
-  - **R12:** relies on FreeRTOS-MPU, but the build uses the non-MPU port.
+  - ~~**R12:** relies on FreeRTOS-MPU, but the build uses the non-MPU
+    port.~~ Decided Nov 5: a known limit. The MPU catches bugs and blocks code
+    running from RAM, but doesn't separate threads.
   - **R13:** requires persistent security event logs, but the plan only has
     counters.
 

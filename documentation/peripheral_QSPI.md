@@ -285,7 +285,7 @@ region read-only, the MPU turns a stray write into a fault that can be caught.
 | Region | Address range | Attributes | Why | When |
 | ------ | ------------- | ---------- | --- | ---- |
 | 1 | QUADSPI registers, `0xA0001000`, 4 KB | Device memory, read/write, no execute | So indirect mode can work | Now: without it, the firmware faults at startup |
-| 2 | `0x90000000`, 16 MB window | Normal memory, read-only, no execute | Safe reads of slots A and B | Before Week 2's memory-mapped read-back |
+| 2 | `0x90000000`, 16 MB window | Normal memory, read-only, no execute | Safe reads of slots A and B | Now, with the other MPU regions. Nothing uses it until Week 2's read-back |
 
 **Execute on region 2:** a general setup allows execution from the window so
 code can run straight from QSPI, known as execute in place. This project never
@@ -293,8 +293,8 @@ runs code from QSPI: stage 2 copies the chosen image into internal flash and
 checks it there. So execution stays off, which also stops an unverified image in
 QSPI from being run by mistake.
 
-The exact CubeMX values for both regions are in
-[core_cortexM7.md](core_cortexM7.md#mpu).
+The exact CubeMX values for both regions, and the rest of the MPU plan, are in
+[core_cortexM7.md](core_cortexM7.md#regions).
 
 ### Summary
 

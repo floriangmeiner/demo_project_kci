@@ -284,6 +284,9 @@ do.
       [peripheral_GPIO.md](documentation/peripheral_GPIO.md).
 - [ ] Finish the CubeMX settings, then regenerate. The list is in
   [TODO.md](TODO.md#finish-the-cubemx-settings).
+- [ ] Set up the MPU (0.5 day): regions 1 to 6 in CubeMX, MemManage fault
+  reporting, and the deliberate violation tests in a debug build. See
+  [MPU](documentation/core_cortexM7.md#mpu).
 - [ ] Prove CAN on hardware before relying on it: confirm the transceiver has
       3.3 V logic, and exchange frames with the CANopen module, using the logic
       analyzer on TX and RX if it fails. If it doesn't work, switch to the
@@ -339,9 +342,11 @@ do.
 
 - [ ] Get the QSPI flash working, using ST's BSP: erase and write in indirect
       mode, then read back a test pattern in memory-mapped mode (which is
-      read-only). Memory-mapped reads need their own MPU region, because the
-      current one blocks `0x90000000`; see
+      read-only). Memory-mapped reads use MPU region 2, set up in Week 1; see
       [MPU](documentation/core_cortexM7.md#mpu).
+- [ ] Give stage 1 and stage 2 their own MPU setup. Stage 2 makes internal
+      flash writable to install images, and turns the MPU off before jumping.
+      The application sets `VTOR` to its own vector table at `0x08040000`.
 - [ ] Design the flash layout: stage 1, stage 2 and the application in internal
   flash (1 MB, single bank, uneven sectors), and slot A, slot B and metadata in
   the 16 MB QSPI flash.
@@ -531,6 +536,11 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 5, 2026:** Planned the full MPU setup for Week 1 instead of adding
+  regions as needed: QSPI registers and window, RAM with no execute, read-only
+  flash, a null guard and a main stack guard, with MemManage fault reporting.
+  The bootloader stages' MPU setup stays in Week 2. Threat model R12 is now a
+  known limit, because every thread runs privileged.
 - **Nov 5, 2026:** Added TFTP firmware updates outside the Week 3 task: in the
   architecture diagram, the daemon's link section, the security demos (the
   "Update gate" test) and the demo video. Enabled lwIP's TFTP server in CubeMX.
