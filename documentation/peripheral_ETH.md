@@ -62,7 +62,7 @@ from lwIP's defaults where the `.ioc` and `lwipopts.h` don't list a setting.
 | ICMP     | Network   | Sends network status and error messages              | Makes `ping` work, which is the quickest first test of the link             |
 | UDP      | Transport | Sends individual packets, with no connection or retries | Carries telemetry and commands; a late reading is better replaced than resent |
 | TCP      | Transport | Sends a reliable, ordered byte stream over a connection | Not used by this project; on by default (see below)                         |
-| TFTP     | Application | Transfers files in small numbered blocks over UDP  | Loads signed firmware images onto the board (not enabled in the `.ioc` yet) |
+| TFTP     | Application | Transfers files in small numbered blocks over UDP  | Loads signed firmware images onto the board (enabled in the `.ioc`, not started in code yet) |
 
 Each protocol is carried inside the one below it:
 
@@ -94,8 +94,10 @@ encrypted link above them.
 
 The Pi sends a signed image to a TFTP server in the running application, on UDP
 port 69, using lwIP's TFTP server. This is the planned design, and it's
-untested. To turn it on, enable `LWIP_TFTP` in CubeMX and call `tftp_init` with
-the callbacks that write to QSPI.
+untested. `LWIP_TFTP` is enabled in CubeMX as of Nov 5, and `tftp_server.c` is
+in the build. Nothing calls `tftp_init` yet, so the linker leaves the server
+out. See [lwIP's TFTP server](#lwips-tftp-server) for its settings and what our
+callbacks must do.
 
 ```text
 Pi: tftp put image.bin
@@ -124,6 +126,96 @@ Things to design for:
   which keeps it small and easier to trust.
 - **An interrupted transfer must be harmless.** Only mark an update as pending
   after the full image has arrived. The active slot is never touched.
+
+#### Checking that an image is complete and correct
+
+TFTP runs over UDP. It sends numbered 512-byte blocks and waits for each one to
+be acknowledged. It can say a transfer finished, but not that the image is
+correct.
+
+**Complete:**
+
+- **End of transfer:** a block shorter than 512 bytes, including an empty one,
+  ends the transfer. If the image size is an exact multiple of 512, the sender
+  adds an empty last block.
+- **The Pi's view:** `tftp put` exits successfully once the last block is
+  acknowledged, and fails on a timeout or an error packet.
+- **The STM32's view:** lwIP's TFTP server calls the close callback when the
+  transfer ends. Treat that as "ended", not "succeeded": `tftp_server.c` calls
+  the same callback, with no status, after the last block, after a failed
+  write, after 10 seconds with no packet, and from `tftp_cleanup`.
+- **The two views can disagree.** The server closes as soon as it acknowledges
+  the last block. If that acknowledgment is lost, the Pi resends the block, gets
+  a "No connection" error and reports a failure, although the STM32 has the
+  whole image. The length and hash report below settles which side is right.
+- **Length check:** the signed image header holds the image length. At close,
+  compare the bytes written with it. If they differ, discard the slot and mark
+  nothing as pending.
+
+**Correct:** the UDP and Ethernet checksums only catch damage to single packets
+in transit. They miss a failed flash write, a block written to the wrong place
+and the wrong file. Check in layers:
+
+| Check | Where | Catches |
+| ----- | ----- | ------- |
+| Bytes received equal the header length | STM32, at close | Short or overlong transfers |
+| Read the slot back from QSPI and hash it | STM32, after writing | Failed flash programming, block placement bugs |
+| Report the length and hash over the encrypted link, and the daemon compares them with its own | Pi | The wrong file sent, or any mismatch, shown at once |
+| Ed25519 signature over the image | Stage 2, at boot | Tampering, a wrong key, anything the checks above missed |
+| Check again after copying to internal flash | Stage 2 | Copy errors, and the check-then-use gap (threat model R5) |
+
+The signature check is the security check. The earlier checks give the ground
+station a quick answer before any restart. The application could also run the
+signature check before restarting, using stage 2's code, so a bad image is
+refused without a reboot.
+
+**Use binary mode.** Some `tftp` clients default to netascii mode, which
+rewrites line endings and corrupts a binary image. Use `tftp -m binary`, `mode
+binary` at the client's prompt, or octet mode in a Python client. The length
+and hash checks would catch it, but it's easy to lose time on.
+
+#### lwIP's TFTP server
+
+CubeMX location: Pinout & Configuration > Middleware and Software Packs > LWIP >
+Configuration. The first two rows are in the `.ioc` and `lwipopts.h`. The rest
+are lwIP's defaults from `tftp_opts.h`, which CubeMX doesn't show.
+
+| Setting | Value | What it does |
+| ------- | ----- | ------------ |
+| `LWIP_TFTP` | 1 | Builds lwIP's TFTP server (`tftp_server.c`) |
+| `TFTP_MAX_FILENAME_LEN` | 32 (default 20) | Longest filename accepted; longer requests get an error |
+| `TFTP_PORT` | 69 | Port the server listens on |
+| `TFTP_TIMEOUT_MSECS` | 10,000 | Silence after which a transfer is abandoned and closed |
+| `TFTP_MAX_RETRIES` | 5 | Resends of a data block, which only happen when the board sends a file |
+| `TFTP_DEBUG` | Off | lwIP's debug messages for TFTP |
+
+How lwIP 2.1.2's server behaves, from reading `tftp_server.c`:
+
+- **One port:** it uses a single UDP socket on port 69 for the whole transfer,
+  rather than moving to a new port as many TFTP servers do. Only the Pi's side
+  uses a new port.
+- **One transfer at a time:** a request from another address or port gets an
+  error while a transfer is running.
+- **Image size limit:** block numbers are 16 bits, so a transfer tops out at
+  about 32 MB, far above any application image.
+- **No checks of its own:** it passes the filename and mode to our `open`
+  callback and accepts reads as well as writes. Refusing anything is up to us.
+
+What our callbacks must do:
+
+| Callback | Must do |
+| -------- | ------- |
+| `open` | Return `NULL`, which refuses the request, unless it's a write, the mode is `octet` (compared without case) and an authenticated `update` command has turned updates on. Reads are refused, so slots can't be downloaded |
+| `write` | Write the block to the inactive slot at block number × 512. Copy with `pbuf_copy_partial`, because a packet can be split across several pbufs. Return a negative value on a flash error, which stops the transfer |
+| `close` | Compare the bytes written with the header length, read the slot back and hash it, report over the link, then turn updates off again |
+
+`tftp_init` and `tftp_cleanup` use lwIP's raw API, so call them in
+`tcpip_thread`, for example through `tcpip_callback`, not directly from
+`linkTask`. All three callbacks also run in `tcpip_thread`. Each 512-byte block
+is two 256-byte QSPI pages, which take about 1 ms to program, or up to 10 ms at
+the datasheet maximum (see [Erase and program
+times](peripheral_QSPI.md#erase-and-program-times)). Other
+network traffic waits for that time.
 
 ### Turned off
 

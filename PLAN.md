@@ -38,9 +38,9 @@ Hardware (power supplies not shown; see [Pin assignments](#pin-assignments)):
 | "spacecraft"             |     Ethernet     | "ground station"     |
 |                          |   encrypted UDP  |                      |
 | Cortex-M7, FreeRTOS      |<================>| Raspberry Pi OS      |
-| Bootloader, Monocypher   |  direct cable,   | Python daemon        |
-| 16 MB QSPI flash         |    static IPs    | Attacker proxy       |
-| (update slots A and B)   |                  | (demos only)         |
+| Bootloader, Monocypher   |  + TFTP images,  | Python daemon        |
+| 16 MB QSPI flash         |  direct cable,   | Attacker proxy       |
+| (update slots A and B)   |    static IPs    | (demos only)         |
 +---+--------------+-------+                  +--------+-------------+
     |              |                                   |
     | I2C2         | CAN1: PB9 TX, PB8 RX              | I2C (optional)
@@ -160,6 +160,12 @@ Link and commands:
 - **Commands:** typed as `set DO2 1`. They set a state rather than toggling, and
   carry a command ID that the STM32 acknowledges, so a lost command can be
   retried safely.
+- **Firmware updates:** the daemon sends an authenticated `update` command over
+  the encrypted link, which turns on the STM32's TFTP server. The Pi then sends
+  the signed image with `tftp put`. The STM32 writes it to the inactive QSPI
+  slot, turns TFTP off again and restarts into stage 2, which verifies and
+  installs it. See
+  [peripheral_ETH.md](documentation/peripheral_ETH.md#loading-firmware-images-with-tftp).
 
 The CANopen module and the outputs' behavior on link loss are still open; see
 [TODO.md](TODO.md#hardware).
@@ -398,7 +404,8 @@ do.
       QSPI slot, then restart into stage 2. See
       [peripheral_ETH.md](documentation/peripheral_ETH.md#loading-firmware-images-with-tftp).
       Until this exists, load Week 2 test images with a debug method such as
-      J-Link.
+      J-Link. Include the "Update gate" test in
+      [Security demos](#security-demos).
 
 **Notes:**
 
@@ -427,10 +434,11 @@ do.
       RDP level 1 can be defeated in a lab, and the I2C wires can be sniffed or
       spoofed unless protected.
 - [ ] Record a 2 to 3 minute demo video showing a CANopen input change at the
-      ground station, an output set by command, and five attacks: tampered image
-      refused and old signed image refused (with the LEDs showing the running
-      version), Wireshark capture showing only ciphertext, replayed command
-      rejected, and a man-in-the-middle handshake failing.
+      ground station, an output set by command, a firmware update sent from the
+      ground station over TFTP, and five attacks: tampered image refused and
+      old signed image refused (with the LEDs showing the running version),
+      Wireshark capture showing only ciphertext, replayed command rejected, and
+      a man-in-the-middle handshake failing.
 - [ ] Optional, only after the video is recorded: a minimal out-of-tree I2C
       kernel driver and device tree overlay for the IMU on the Pi 5. Timebox to
       2 to 3 days, and don't use the buffer days. Stop at the timebox even if it
@@ -455,6 +463,7 @@ is pointed at the attacker tool on the Pi 5, which forwards to the daemon.
 | Rollback counter        | Install v2, then a correctly signed v1                | v1 refused as too old                         | Week 2   |
 | A/B recovery            | Install a signed image that never confirms            | Board reverts to the last good image          | Week 2   |
 | ATECC608 key protection | Read the private key slot                             | Read refused; chip can still sign             | Week 3   |
+| Update gate             | `tftp put` an image with no `update` command first    | No reply: the TFTP server is off, slots untouched | Week 3 |
 | AEAD confidentiality    | Capture traffic while toggling an input               | No readable state; same state differs on wire | Week 4   |
 | AEAD integrity          | Flip one bit of a `set` command                       | Rejected, output unchanged, counter goes up   | Week 4   |
 | Replay protection       | Set DO2 to 0, then resend a captured "DO2 = 1"        | DO2 stays 0, counter goes up                  | Week 4   |
@@ -522,6 +531,9 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 5, 2026:** Added TFTP firmware updates outside the Week 3 task: in the
+  architecture diagram, the daemon's link section, the security demos (the
+  "Update gate" test) and the demo video. Enabled lwIP's TFTP server in CubeMX.
 - **Nov 5, 2026:** Configured in CubeMX: the UART (USART1 on PA9 and PB7), the
   red and green LEDs on PI3 and PI2, the user button on PI11, HSE in bypass
   mode, QSPI flash size, clock and chip select time, the 48 MHz RNG clock, the

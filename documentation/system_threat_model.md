@@ -27,23 +27,41 @@ The real-world analogue is CCSDS Space Data Link Security (SDLS, CCSDS
 355.0-B): authenticated encryption, sequence numbers with an anti-replay
 window, and managed keys. This demo is a small, honest version of that idea.
 
-```
-        Ground segment                    Space segment (STM32)
- +------------------------+        +----------------------------------+
- | Signing host (offline) |        |  Stage 1 boot (immutable, ROT)   |
- |  firmware signing key  |        |        | verifies                |
- +-----------+------------+        |        v                         |
-             | signed image        |  Stage 2 / app slots A and B     |
-             v                     |        |                         |
- +------------------------+  link  |  +-----+-------------------+     |
- | Ground station (Pi 5)  |<======>|  | Link task | Cmd task     |     |
- |  ground link key       |   TB2  |  | Sensor    | Telemetry    |     |
- +------------------------+        |  +-----+-------------------+     |
-                                   |        | TB3                     |
-                                   |  Key store (flash, ATECC608 or   |
-                                   |  TrustZone secure world)         |
-                                   |  SWD debug port  (TB4)           |
-                                   +----------------------------------+
+```text
+Ground segment
+
++--------------------------+   signed image   +--------------------------+
+| Signing host (offline)   |----------------->| Ground station (Pi 5)    |
+|  Ed25519 signing key     |      (TB1)       |  Raspberry Pi OS daemon  |
++--------------------------+                  +------------+-------------+
+                                                           ^
+                 Ethernet link (TB2): encrypted telemetry  |
+                 and commands, signed images over TFTP     |
+                                                           v
+Space segment (STM32F746G-DISCO)
++------------------------------------------------------------------------+
+| Stage 1 boot: immutable root of trust, holds the Ed25519 public key    |
+|      | verifies stage 2                                                |
+|      v                                                                 |
+| Stage 2 boot: copies QSPI slot A or B to internal flash, verifies the  |
+|      | copy and its version                                            |
+|      v                                                                 |
+| Application (FreeRTOS, started by defaultTask)                         |
+|                                                                        |
+|   EthIf <--> tcpip_thread <--> linkTask --I2C (TB3)--> ATECC608        |
+|                                session keys,          P-256 identity   |
+|                                AEAD                   key              |
+|                                   ^                                    |
+|                                   | queues                             |
+|                                   v                                    |
+|                  CAN <--> canOpenTask                                  |
+|                                                                        |
+| Reachable from outside (TB4): SWD debug port, QSPI flash, I2C bus      |
++------------------------------------------------------------------------+
+                  |
+                  | CAN
+                  v
+          CANopen IO module
 ```
 
 ## 2. Assets

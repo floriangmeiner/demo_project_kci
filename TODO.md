@@ -1,7 +1,7 @@
 # Outstanding Work
 
 Open questions and unfinished setup work, last checked against the `.ioc` saved
-at 15:51 on Nov 5, 2026. The weekly tasks and schedule stay in
+at 18:57 on Nov 5, 2026. The weekly tasks and schedule stay in
 [PLAN.md](PLAN.md).
 
 Nothing has run on the board yet, so every setting below is untested.
@@ -22,6 +22,10 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
       stack](documentation/middleware_LWIP.md#raising-the-ethif-stack).
 - [ ] **Add an MPU region for memory-mapped QSPI flash** before Week 2's
       read-back. See [MPU](documentation/core_cortexM7.md#mpu).
+- [x] **Enable lwIP's TFTP server.** Done Nov 5: `LWIP_TFTP` on, with
+      32-character filenames. The callbacks and `tftp_init` are Week 3 code.
+      See [lwIP's TFTP
+      server](documentation/peripheral_ETH.md#lwips-tftp-server).
 - [x] **Finish the USART1 interrupt and DMA setup.** Done Nov 5: USART1
       interrupt at priority 5, RX DMA on DMA2 stream 2 in circular mode, and TX
       DMA on DMA2 stream 7, both at priority 5. See [Recommended
@@ -113,8 +117,9 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
     H563 as having hardware crypto.
   - **Settled choices:** it leaves MCUboot or custom, ChaCha or AES-GCM, ECDH or
     X25519, and Ed25519 or P-256 open.
-  - **Diagram:** it shows old task names and a TrustZone key store, which this
-    chip doesn't have.
+  - ~~**Diagram:** it shows old task names and a TrustZone key store, which
+    this chip doesn't have.~~ Done Nov 5: it now shows the current threads, the
+    two boot stages and the ATECC608.
   - **R1:** stage 1 verifies every image, but the design has stage 2 verify the
     application.
   - **R2:** the key hash is in OTP, but the design keeps the public key in

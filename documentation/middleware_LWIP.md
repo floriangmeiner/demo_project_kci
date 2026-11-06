@@ -109,6 +109,8 @@ Why this change, and why here:
 | `CHECKSUM_BY_HARDWARE` | 1 | CubeMX | The Ethernet MAC calculates and checks IP, UDP, TCP and ICMP checksums, so lwIP's software checksums are off | Saves CPU time; confirm in Wireshark that outgoing checksums are correct |
 | `LWIP_NETIF_LINK_CALLBACK` | 1 | CubeMX | Lets lwIP react when the cable is plugged in or removed | Used by `EthLink` to report link state |
 | `LWIP_STATS` | 0 | CubeMX | lwIP's internal counters | Off; turn on to debug dropped packets |
+| `LWIP_TFTP` | 1 | CubeMX | Builds lwIP's TFTP server | Receives firmware images. See [lwIP's TFTP server](peripheral_ETH.md#lwips-tftp-server) |
+| `TFTP_MAX_FILENAME_LEN` | 32 | CubeMX | Longest filename the TFTP server accepts | Any short image name fits |
 | `RECV_BUFSIZE_DEFAULT` | 2,000,000,000 | CubeMX | Limit on queued received data per connection | Effectively no limit; the mailbox size is the real limit |
 
 The 12 receive buffers and the Ethernet DMA descriptors are set in
