@@ -22,3 +22,12 @@ content:
 
 Wrap the rest of a line around a long link where possible, so only the link
 itself goes past the limit.
+
+## Register and bit names
+
+In chat replies, whenever a register or bit name appears, spell out what it
+stands for in parentheses right after it, for example `CFSR` (Configurable
+Fault Status Register) or `IACCVIOL` (instruction access violation).
+
+Don't do this in Markdown files or other documents unless asked to for that
+file.

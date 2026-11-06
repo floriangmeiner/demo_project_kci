@@ -123,11 +123,30 @@ Core > CORTEX_M7 > Parameter Settings > Cortex Memory Protection Unit Region
 N Settings. Set MPU Region to Enabled to show the other fields. Region 0
 belongs to Speculation default mode Settings, so leave it as it is.
 
+Table 1 has the values to enter, using CubeMX's own wording. The MPU Access
+Permission names are long, so Table 1 uses a short name for each, and Table 4
+gives the full CubeMX option.
+
+**Table 1: Region settings to enter in CubeMX**
+
+| Region | Use | MPU Region Base Address | MPU Region Size | MPU SubRegion Disable | MPU TEX field level | MPU Access Permission | MPU Instruction Access | MPU Shareability Permission | MPU Cacheable Permission | MPU Bufferable Permission |
+| ------ | --- | ----------------------- | --------------- | --------------------- | ------------------- | --------------------- | ---------------------- | --------------------------- | ------------------------ | ------------------------- |
+| 0 | Speculation guard (exists, leave it) | 0x0 | 4GB | 0x87 | level 0 | No access | DISABLE | ENABLE | DISABLE | DISABLE |
+| 1 | QSPI registers | 0xA0001000 | 4KB | 0x0 | level 0 | Full access | DISABLE | ENABLE | DISABLE | ENABLE |
+| 2 | QSPI flash, memory-mapped | 0x90000000 | 16MB | 0x0 | level 1 | Read-only | DISABLE | DISABLE | DISABLE | DISABLE |
+| 3 | All RAM | 0x20000000 | 512KB | 0x0 | level 1 | Full access | **DISABLE** | DISABLE | DISABLE | DISABLE |
+| 4 | Internal flash | 0x08000000 | 1MB | 0x0 | level 0 | Read-only | **ENABLE** | DISABLE | **ENABLE** | DISABLE |
+| 5 | Null guard | 0x0 | 1KB | 0x0 | level 0 | No access | DISABLE | ENABLE | DISABLE | DISABLE |
+| 6 | Main stack guard | 0x2004FC00 | 32B | 0x0 | level 0 | No access | DISABLE | ENABLE | DISABLE | DISABLE |
+| 7 | Spare | MPU Region: Disabled | | | | | | | | |
+
 Under Cortex Memory Protection Unit Control Settings, MPU Control Mode stays at
 "Background Region Privileged accesses only + MPU Disabled during hard fault,
 NMI and FAULTMASK handlers". CubeMX turns that into
 `HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT)`, which sets two things in the MPU's
 control register (`MPU->CTRL`):
+
+**Table 2: MPU control register bits set by `MPU_PRIVILEGED_DEFAULT`**
 
 | Bit | Value | Meaning |
 | --- | ----- | ------- |
@@ -138,6 +157,8 @@ control register (`MPU->CTRL`):
 already go to `MemManage_Handler` instead of HardFault.
 
 The five MPU Control Mode options, and what CubeMX generates for each:
+
+**Table 3: MPU Control Mode options**
 
 | MPU Control Mode | HAL value | `PRIVDEFENA` | `HFNMIENA` |
 | ---------------- | --------- | ------------ | ---------- |
@@ -164,29 +185,20 @@ Why the one used:
 
 The six MPU Access Permission options:
 
-| CubeMX option | HAL value | Privileged code | Unprivileged code | Used for |
-| ------------- | --------- | --------------- | ----------------- | -------- |
-| ALL ACCESS NOT PERMITTED | `MPU_REGION_NO_ACCESS` | None | None | "None": regions 0, 5, 6 |
+**Table 4: MPU Access Permission options**
+
+| CubeMX option | HAL value | Privileged code | Unprivileged code | Short name in Table 1 |
+| ------------- | --------- | --------------- | ----------------- | --------------------- |
+| ALL ACCESS NOT PERMITTED | `MPU_REGION_NO_ACCESS` | None | None | No access (regions 0, 5, 6) |
 | Privileged READS\WRITES Permissions | `MPU_REGION_PRIV_RW` | Read, write | None | |
 | Privileged READS\WRITES Permissions + Unprivileged READS Permissions | `MPU_REGION_PRIV_RW_URO` | Read, write | Read | |
-| ALL ACCESS PERMITTED | `MPU_REGION_FULL_ACCESS` | Read, write | Read, write | "All access": regions 1, 3 |
+| ALL ACCESS PERMITTED | `MPU_REGION_FULL_ACCESS` | Read, write | Read, write | Full access (regions 1, 3) |
 | Privileged READS Permissions | `MPU_REGION_PRIV_RO` | Read | None | |
-| Privileged READS Permissions + Unprivileged READS Permissions | `MPU_REGION_PRIV_RO_URO` | Read | Read | "Read-only": regions 2, 4 |
+| Privileged READS Permissions + Unprivileged READS Permissions | `MPU_REGION_PRIV_RO_URO` | Read | Read | Read-only (regions 2, 4) |
 
 Every thread runs privileged, so only the privileged column matters today.
 The unprivileged column would only matter with FreeRTOS-MPU. The last option
 has two spaces before "READS" in CubeMX.
-
-| # | Region | Base | Size | Access | Instruction access | TEX | Shareable | Cacheable | Bufferable |
-| - | ------ | ---- | ---- | ------ | ------------------ | --- | --------- | --------- | ---------- |
-| 0 | Speculation guard (exists) | `0x00000000` | 4 GB, sub-regions `0x87` | None | Disabled | 0 | Yes | No | No |
-| 1 | QSPI registers | `0xA0001000` | 4 KB | All access | Disabled | 0 | Yes | No | Yes |
-| 2 | QSPI flash, memory-mapped | `0x90000000` | 16 MB | Read-only | Disabled | 1 | No | No | No |
-| 3 | All RAM | `0x20000000` | 512 KB | All access | **Disabled** | 1 | No | No | No |
-| 4 | Internal flash | `0x08000000` | 1 MB | **Read-only** | Enabled | 0 | No | **Yes** | No |
-| 5 | Null guard | `0x00000000` | 1 KB | None | Disabled | 0 | Yes | No | No |
-| 6 | Main stack guard | `0x2004FC00` | 32 B | None | Disabled | 0 | Yes | No | No |
-| 7 | Spare | | | | | | | | |
 
 Sub-region disable is `0x0` for regions 1 to 6. In memory type terms, region 1
 is device memory, regions 2 and 3 are normal non-cacheable memory, region 4 is
