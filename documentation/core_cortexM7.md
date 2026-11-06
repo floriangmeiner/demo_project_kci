@@ -109,8 +109,9 @@ up, such as the SDRAM at `0xC0000000`, can stall the bus. Region 0 blocks
 | Access               | None                                                   |
 
 Two QSPI ranges fall inside it. **The QSPI registers at `0xA0001000` stop
-startup:** `MX_QUADSPI_Init` writes to them, and with no MemManage fault
-enabled this becomes a HardFault before the scheduler starts. Memory-mapped
+startup:** `MX_QUADSPI_Init` writes to them, which raises a MemManage fault
+before the scheduler starts. The generated `MemManage_Handler` is an endless
+loop, so the board just stops there. Memory-mapped
 QSPI at `0x90000000` is blocked too. Regions 1 and 2 below fix both. This
 comes from reading the code and RM0385's memory map, and hasn't been run on
 the board.
@@ -119,7 +120,62 @@ the board.
 
 All proposed and untested. CubeMX location: Pinout & Configuration > System
 Core > CORTEX_M7 > Parameter Settings > Cortex Memory Protection Unit Region
-N Settings.
+N Settings. Set MPU Region to Enabled to show the other fields. Region 0
+belongs to Speculation default mode Settings, so leave it as it is.
+
+Under Cortex Memory Protection Unit Control Settings, MPU Control Mode stays at
+"Background Region Privileged accesses only + MPU Disabled during hard fault,
+NMI and FAULTMASK handlers". CubeMX turns that into
+`HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT)`, which sets two things in the MPU's
+control register (`MPU->CTRL`):
+
+| Bit | Value | Meaning |
+| --- | ----- | ------- |
+| `PRIVDEFENA` | 1 | Privileged code may use the default memory map wherever no region applies. Without it, any address outside the regions faults |
+| `HFNMIENA` | 0 | The MPU is off while the HardFault, NMI and FAULTMASK handlers run, so a fault handler can read any address while it logs |
+
+`HAL_MPU_Enable` also sets `MEMFAULTENA` in `SCB->SHCSR`, so MPU violations
+already go to `MemManage_Handler` instead of HardFault.
+
+The five MPU Control Mode options, and what CubeMX generates for each:
+
+| MPU Control Mode | HAL value | `PRIVDEFENA` | `HFNMIENA` |
+| ---------------- | --------- | ------------ | ---------- |
+| MPU NOT USED | No `MPU_Config` at all | - | - |
+| Background Region Access Not Allowed + MPU Disabled during hard fault, NMI and FAULTMASK handlers | `MPU_HFNMI_PRIVDEF_NONE` | 0 | 0 |
+| Background Region Access Not Allowed + MPU Enabled during hard fault, NMI and FAULTMASK handlers | `MPU_HARDFAULT_NMI` | 0 | 1 |
+| **Background Region Privileged accesses only + MPU Disabled during hard fault, NMI and FAULTMASK handlers (used)** | `MPU_PRIVILEGED_DEFAULT` | 1 | 0 |
+| Background Region Privileged accesses only + MPU Enabled during hard fault, NMI and FAULTMASK handlers | `MPU_HFNMI_PRIVDEF` | 1 | 1 |
+
+Why the one used:
+
+- **Background "Privileged accesses only", not "Access Not Allowed":** with
+  "Access Not Allowed", every address outside a region faults, so peripherals,
+  system memory (the unique ID and OTP at `0x1FF0F000`) and anything forgotten
+  would each need a region, from only 8. Every thread is privileged, so the
+  stricter list would add little protection here. The core's own registers at
+  `0xE0000000` and up, such as `SCB` and `NVIC`, ignore the MPU either way.
+- **"MPU Disabled during hard fault":** the HardFault handler can still run
+  when the fault was caused by the stack itself. If the main stack overflows
+  into region 6, the CPU can't save registers on entry to `MemManage_Handler`,
+  and the fault escalates to HardFault. With the MPU off in HardFault, that
+  entry succeeds and the handler can report the cause. With it on, the CPU
+  would lock up.
+
+The six MPU Access Permission options:
+
+| CubeMX option | HAL value | Privileged code | Unprivileged code | Used for |
+| ------------- | --------- | --------------- | ----------------- | -------- |
+| ALL ACCESS NOT PERMITTED | `MPU_REGION_NO_ACCESS` | None | None | "None": regions 0, 5, 6 |
+| Privileged READS\WRITES Permissions | `MPU_REGION_PRIV_RW` | Read, write | None | |
+| Privileged READS\WRITES Permissions + Unprivileged READS Permissions | `MPU_REGION_PRIV_RW_URO` | Read, write | Read | |
+| ALL ACCESS PERMITTED | `MPU_REGION_FULL_ACCESS` | Read, write | Read, write | "All access": regions 1, 3 |
+| Privileged READS Permissions | `MPU_REGION_PRIV_RO` | Read | None | |
+| Privileged READS Permissions + Unprivileged READS Permissions | `MPU_REGION_PRIV_RO_URO` | Read | Read | "Read-only": regions 2, 4 |
+
+Every thread runs privileged, so only the privileged column matters today.
+The unprivileged column would only matter with FreeRTOS-MPU. The last option
+has two spaces before "READS" in CubeMX.
 
 | # | Region | Base | Size | Access | Instruction access | TEX | Shareable | Cacheable | Bufferable |
 | - | ------ | ---- | ---- | ------ | ------------------ | --- | --------- | --------- | ---------- |
@@ -165,13 +221,12 @@ Notes:
 
 ### MemManage fault reporting
 
-Without this, every MPU violation shows up as a generic HardFault. Two pieces
-of user code, added after the regions:
-
-- Enable the MemManage fault after `MPU_Config()` in `main.c`, in a `USER CODE`
-  block: `SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk`.
-- Fill in `MemManage_Handler` in `stm32f7xx_it.c`: record `SCB->CFSR` and
-  `SCB->MMFAR`, then stop. Week 2's persistent fault log reuses this.
+The MemManage fault is already enabled by `HAL_MPU_Enable`, but the generated
+`MemManage_Handler` and `HardFault_Handler` are empty endless loops. Fill in
+both in `stm32f7xx_it.c`, in their `USER CODE` blocks, to record `SCB->CFSR`,
+`SCB->HFSR` and `SCB->MMFAR`, then stop. HardFault needs it too, because a
+stack guard hit ends up there (see above). Week 2's persistent fault log reuses
+this.
 
 ### Tests
 
@@ -185,7 +240,7 @@ the plan's guardrail on debug paths.
 | Copy a `bx lr` instruction into a RAM buffer and call it | MemManage fault, instruction access violation |
 | Write to `0x08000000` | MemManage fault, `MMFAR` = `0x08000000` |
 | Write to `0x90000000` in memory-mapped mode | MemManage fault |
-| Deep recursion in an interrupt handler | MemManage fault at the main stack guard |
+| Deep recursion in an interrupt handler | HardFault, with `HFSR` FORCED and `CFSR` showing a MemManage stacking error (`MSTKERR`) |
 
 If the first boot faults, read `CFSR` and `MMFAR` in Ozone. To rule a region
 out, turn off its Enable setting in CubeMX.

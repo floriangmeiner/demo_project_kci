@@ -16,8 +16,10 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
       The others are memory-mapped QSPI, RAM with no execute, read-only flash, a
       null guard and a main stack guard. Values are in
       [Regions](documentation/core_cortexM7.md#regions).
-- [ ] **Add MemManage fault reporting:** not in CubeMX. Commit the CubeMX
-      change first, then add the `USER CODE` for the enable and the handler.
+- [ ] **Add MemManage fault reporting:** not in CubeMX. `HAL_MPU_Enable`
+      already enables the fault, so only the `MemManage_Handler` and
+      `HardFault_Handler` bodies are needed. Commit the CubeMX change first,
+      then add them in their `USER CODE` blocks.
       See [MemManage fault
       reporting](documentation/core_cortexM7.md#memmanage-fault-reporting).
 - [ ] **Fill in the two hook functions** in `freertos.c`. CubeMX generated them
