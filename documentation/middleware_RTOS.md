@@ -119,14 +119,14 @@ CubeMX unit problem.
 | Thread         | Created by     | Priority                     | Stack now (words) | Stack now (bytes) | Recommended (bytes) | Job                                      |
 | -------------- | -------------- | ---------------------------- | ----------------- | ----------------- | ------------------- | ---------------------------------------- |
 | `tcpip_thread` | lwIP           | 24 (`osPriorityNormal`)      | 1024              | 4096              | 4096                | Runs the network stack                   |
-| `EthIf`        | `ethernetif.c` | 48 (`osPriorityRealtime`)    | About 87          | 350               | 1024                | Wakes on the interrupt, passes frames up |
+| `EthIf`        | `ethernetif.c` | 48 (`osPriorityRealtime`)    | 256               | 1024              | 1024                | Wakes on the interrupt, passes frames up |
 | `EthLink`      | `lwip.c`       | 16 (`osPriorityBelowNormal`) | 256               | 1024              | 1024                | Watches the Ethernet cable link state    |
 
 **These sizes are in bytes.** CMSIS-RTOS v2 reads `stack_size` in bytes, and
 `sys_arch.c` passes `TCPIP_THREAD_STACKSIZE` straight to it. `tcpip_thread` is
-now 4096 bytes, as recommended. `EthIf`'s `INTERFACE_THREAD_STACK_SIZE` is still
-350 bytes, only about 87 words, so raise it and measure both. Where to change
-them:
+now 4096 bytes, as recommended. `EthIf`'s `INTERFACE_THREAD_STACK_SIZE` was
+raised from 350 to 1024 bytes on Nov 26. Neither has been measured yet. Where to
+change them:
 
 - **`tcpip_thread`:** Pinout & Configuration > Middleware and Software Packs >
   LWIP > Configuration > Key Options > Infrastructure - Threading Options >
@@ -161,14 +161,13 @@ Why `linkTask` is separate from `defaultTask`:
 | Item                 | Now (bytes) | Recommended (bytes) | Notes                                 |
 | -------------------- | ----------- | ------------------- | ------------------------------------- |
 | Application stacks   | 14,336      | 14,336              | Sizes in the `.ioc`                   |
-| lwIP stacks          | 5,470       | 6,144               | See [lwIP threads](#lwip-threads)     |
-| Total stacks         | 19,806      | 20,480              | Before task control blocks and queues |
+| lwIP stacks          | 6,144       | 6,144               | See [lwIP threads](#lwip-threads)     |
+| Total stacks         | 20,480      | 20,480              | Before task control blocks and queues |
 | FreeRTOS heap        | 32,768      | 32,768              | `configTOTAL_HEAP_SIZE`, in the FreeRTOS settings in CubeMX |
 
-The heap has room for every thread. About 12.7 KB is left today, and about 12 KB
-once the `EthIf` stack is raised, for task control blocks, queues and lwIP's
-mailboxes. This is a calculation, so confirm it with `xPortGetFreeHeapSize` once
-everything is running.
+The heap has room for every thread. About 12 KB is left for task control blocks,
+queues and lwIP's mailboxes. This is a calculation, so confirm it with
+`xPortGetFreeHeapSize` once everything is running.
 
 The idle and timer task stacks aren't counted, because they're allocated
 statically.
@@ -209,24 +208,34 @@ have it.
 
 ### What the hooks do now
 
-CubeMX generated both hooks in `freertos.c` with empty bodies. As generated,
-they **detect a problem and then let the program carry on**, usually with a
-corrupted stack or a failed allocation. Fill them in, in their `USER CODE`
-section so regenerating keeps the change. While developing, the simplest version
-stops everything so the debugger shows the cause:
+**Filled in Nov 26; not yet run on the board.** CubeMX generated both hooks in
+`freertos.c` with empty bodies. Empty hooks **detect a problem and then let the
+program carry on**: after a stack overflow, memory next to the stack is already
+corrupted, and after a failed allocation the caller gets NULL. For example,
+`low_level_init` doesn't check whether `osThreadNew` created `EthIf`, so a full
+heap would leave Ethernet silently dead.
 
-```c
-void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
-{
-  (void)xTask;
-  (void)pcTaskName;    /* Visible in the debugger: the overflowing thread */
-  taskDISABLE_INTERRUPTS();
-  for (;;) { }
-}
-```
+Both hooks now stop the board, so the debugger shows the cause:
 
-The malloc-failed hook can do the same. Later, these are places to log the fault
-to the reset log planned in Slice 4.
+| Step | Why |
+| ---- | --- |
+| Copy `pcTaskName` into a `volatile` local, `overflowed_task` (stack overflow hook only) | Keeps the overflowing thread's name readable in Ozone, even in an optimized build |
+| `taskDISABLE_INTERRUPTS()` | Stops other threads and interrupts from running on corrupted memory |
+| `__BKPT(0)`, only if `CoreDebug->DHCSR` has `C_DEBUGEN` set | Makes Ozone stop in the hook by itself. Without a debugger, a breakpoint instruction would fault, so it's skipped |
+| Loop forever | Leaves the board halted for inspection. This is the same pattern as `configASSERT` in `FreeRTOSConfig.h` |
+
+The code is in the `USER CODE BEGIN 4` and `5` blocks, so regenerating keeps it.
+It mirrors `record_fault` in `stm32f7xx_it.c`, described in [MemManage fault
+reporting](core_cortexM7.md#memmanage-fault-reporting).
+
+**What you'll see:** with Ozone attached, the board stops at the breakpoint in
+the hook. For an overflow, read `overflowed_task` for the thread's name. For a
+full heap, the call stack shows which allocation failed.
+
+**Later:** halting suits development, but a flight build can't wait for someone
+to press reset. These hooks, and the fault handlers, should then save the cause
+somewhere that survives reset and reset the board, to fit the reset log planned
+in Slice 4.
 
 ## Measuring stacks
 

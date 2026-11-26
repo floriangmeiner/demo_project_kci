@@ -34,7 +34,9 @@ Ethernet MAC and DMA ── LAN8742 PHY ── RJ45 ── Raspberry Pi 5
 
 [peripheral_ETH.md](peripheral_ETH.md) covers the Ethernet hardware, DMA and
 which protocols are on, and [middleware_RTOS.md](middleware_RTOS.md) covers how
-these threads fit with the application.
+these threads fit with the application. [lwIP Call
+Flow](../references/lwIP_call_flow.md) has sequence diagrams of every function
+call on the send and receive paths.
 
 ## Stack size units
 
@@ -64,13 +66,14 @@ bug that looks like a network or crypto fault.
 | Thread         | Created by     | Stack, set where                      | Stack now   | Recommended | Priority | Job |
 | -------------- | -------------- | ------------------------------------- | ----------- | ----------- | -------- | --- |
 | `tcpip_thread` | lwIP           | CubeMX, `TCPIP_THREAD_STACKSIZE`      | 4096 bytes  | Keep        | 24 | Runs the whole stack. All lwIP work happens here |
-| `EthIf`        | `ethernetif.c` | `INTERFACE_THREAD_STACK_SIZE` in a `USER CODE` block of `ethernetif.c`; not in CubeMX | 350 bytes | 1024 bytes | 48 | Wakes on the Ethernet interrupt and passes received frames to `tcpip_thread` |
+| `EthIf`        | `ethernetif.c` | `INTERFACE_THREAD_STACK_SIZE` in a `USER CODE` block of `ethernetif.c`; not in CubeMX | 1024 bytes | Keep | 48 | Wakes on the Ethernet interrupt and passes received frames to `tcpip_thread` |
 | `EthLink`      | `lwip.c`       | `INTERFACE_THREAD_STACK_SIZE` in `lwip.c` | 1024 bytes | Keep      | 16       | Checks the cable link with the PHY and updates lwIP |
 
 ### Raising the `EthIf` stack
 
-CubeMX has no setting for this thread, so change it by hand near the top of
-`LWIP/Target/ethernetif.c`:
+**Done Nov 26; not yet run on the board.** CubeMX has no setting for this
+thread: its template writes a fixed 350. So it was changed by hand near the top
+of `LWIP/Target/ethernetif.c`:
 
 ```c
 /* USER CODE BEGIN OS_THREAD_STACK_SIZE_WITH_RTOS */
@@ -119,8 +122,8 @@ The 12 receive buffers and the Ethernet DMA descriptors are set in
 
 ## To check
 
-- `INTERFACE_THREAD_STACK_SIZE` in `ethernetif.c` is raised to 1024, and
-  survives regenerating.
+- `INTERFACE_THREAD_STACK_SIZE` in `ethernetif.c` is still 1024 after the next
+  CubeMX regeneration.
 - Measure each thread's free stack with `uxTaskGetStackHighWaterMark` once
   traffic is flowing. See [Measuring
   stacks](middleware_RTOS.md#measuring-stacks).

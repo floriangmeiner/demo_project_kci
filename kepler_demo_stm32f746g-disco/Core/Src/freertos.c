@@ -62,6 +62,22 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
+
+  /* pcTaskName says which task overflowed; read it in the debugger. The
+   * volatile copy keeps it visible in optimised builds. */
+  volatile signed char *overflowed_task = pcTaskName;
+  (void)xTask;
+  (void)overflowed_task;
+
+  /* Memory next to the stack is already damaged, so stop here */
+  taskDISABLE_INTERRUPTS();
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) != 0U)
+  {
+    __BKPT(0);
+  }
+  for (;;)
+  {
+  }
 }
 /* USER CODE END 4 */
 
@@ -78,6 +94,17 @@ void vApplicationMallocFailedHook(void)
    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
    to query the size of free heap space that remains (although it does not
    provide information on how the remaining heap might be fragmented). */
+
+  /* The FreeRTOS heap is full. The debugger's call stack shows which
+   * allocation failed. */
+  taskDISABLE_INTERRUPTS();
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) != 0U)
+  {
+    __BKPT(0);
+  }
+  for (;;)
+  {
+  }
 }
 /* USER CODE END 5 */
 

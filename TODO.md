@@ -8,15 +8,15 @@ Nothing has run on the board yet, so every setting below is untested.
 
 ## Finish the setup
 
-The CubeMX settings are done. Two code edits remain, both in Slice 1:
+The CubeMX settings and code edits are done. Next is the first flash, under
+[Check on hardware](#check-on-hardware).
 
-- [ ] **Fill in the two hook functions** in `freertos.c`. CubeMX generated them
-      empty, so a detected overflow or failed allocation is ignored. See [What
-      the hooks do now](documentation/middleware_RTOS.md#what-the-hooks-do-now).
-- [ ] **Raise the `EthIf` stack to 1024 bytes:** not in CubeMX. Change
-      `INTERFACE_THREAD_STACK_SIZE` from 350 to 1024 in the `USER CODE` block
-      near the top of `LWIP/Target/ethernetif.c`. See [Raising the `EthIf`
-      stack](documentation/middleware_LWIP.md#raising-the-ethif-stack).
+- [x] **Fill in the two hook functions** in `freertos.c`. Done Nov 26: both stop
+      the board, at a breakpoint when a debugger is attached. See [What the
+      hooks do now](documentation/middleware_RTOS.md#what-the-hooks-do-now).
+- [x] **Raise the `EthIf` stack to 1024 bytes.** Done Nov 26, in the `USER CODE`
+      block near the top of `LWIP/Target/ethernetif.c`. See [Raising the
+      `EthIf` stack](documentation/middleware_LWIP.md#raising-the-ethif-stack).
 - [x] **Add MPU regions 1 to 6.** Done Nov 6, and in `MPU_Config`: QSPI
       registers, memory-mapped QSPI, RAM with no execute, read-only flash, a
       null guard and a main stack guard. Builds; not yet run on the board. See
