@@ -43,11 +43,11 @@
 #define ETHIF_TX_TIMEOUT (2000U)
 /* USER CODE BEGIN OS_THREAD_STACK_SIZE_WITH_RTOS */
 /* Stack size of the interface thread */
-/* Updated form 350 bytes to 1024 as FreeRTOS min. task stack is 512 bytes.
+/* Updated from 350 bytes to 1024 as FreeRTOS min. task stack is 512 bytes.
   1024 bytes leaves a comfortable margin. Use uxTaskGetStackHighWaterMark to
-  later analyze if we should trim size. 
+  later analyze if we should trim size.
 */
-#define INTERFACE_THREAD_STACK_SIZE ( 1024 ) 
+#define INTERFACE_THREAD_STACK_SIZE ( 1024 )
 /* USER CODE END OS_THREAD_STACK_SIZE_WITH_RTOS */
 /* Network interface name */
 #define IFNAME0 's'
