@@ -227,7 +227,7 @@ Notes on the mapping:
 
 Build on the **F746-DISCO plus ATECC608**. It meets every requirement
 against the in-scope attackers, it is already owned, and it keeps the
-4-week schedule. Its two honest gaps are R10 (the app can use the key even
+schedule. Its two honest gaps are R10 (the app can use the key even
 if it cannot read it) and R11 (RDP level 1 is glitchable). Both get stated
 in the README as known limits, which is itself a good signal for the role.
 

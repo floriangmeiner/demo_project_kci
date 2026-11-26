@@ -135,7 +135,7 @@ the board:
 as the flash changes its output, where the 1 ns hold is less than the STM32's 3
 ns, leaving only board delay to make up the difference. It's worth trying only
 if 108 MHz is ever needed. These are worst-case sums from the datasheets, so
-confirm them with the Week 2 read-back test.
+confirm them with the read-back test in Slice 6.
 
 ## Flash chip
 
@@ -175,7 +175,7 @@ before reusing this driver.
 | DQ3 function          | `HOLD#`                     | The QSPI holds IO3 high in single-line phases |
 | Power-up              | 150 µs before reading       | Check if stage 1 reads QSPI early         |
 
-These are the command details Week 2's driver needs:
+These are the command details the QSPI driver needs:
 
 - **Read command:** quad output fast read (`6Bh`) works without changing any
   flash settings, and uses 8 dummy cycles by default.
@@ -285,7 +285,7 @@ region read-only, the MPU turns a stray write into a fault that can be caught.
 | Region | Address range | Attributes | Why | When |
 | ------ | ------------- | ---------- | --- | ---- |
 | 1 | QUADSPI registers, `0xA0001000`, 4 KB | Device memory, read/write, no execute | So indirect mode can work | Now: without it, the firmware faults at startup |
-| 2 | `0x90000000`, 16 MB window | Normal memory, read-only, no execute | Safe reads of slots A and B | Now, with the other MPU regions. Nothing uses it until Week 2's read-back |
+| 2 | `0x90000000`, 16 MB window | Normal memory, read-only, no execute | Safe reads of slots A and B | Now, with the other MPU regions. Nothing uses it until the read-back in Slice 6 |
 
 **Execute on region 2:** a general setup allows execution from the window so
 code can run straight from QSPI, known as execute in place. This project never

@@ -11,13 +11,14 @@ module over CAN, and sends that state to the Pi over an encrypted, authenticated
 Ethernet link. The Pi displays the state and can send commands back to set the
 module's outputs.
 
-**Status (Nov 5, 2026):** in progress, with a target of Dec 2, 2026. Week 1 of 4
-is underway. The on-board debugger now runs J-Link firmware and connects to the
-chip. CAN, Ethernet, QSPI, the UART, the LEDs and the user button are configured
-in CubeMX, and the generated code builds, but a few settings are still open (see
-[TODO.md](TODO.md)). Nothing has run on the board yet, and no application code
-exists yet. Everything below describes the planned design. See
-[PLAN.md](PLAN.md) for the schedule.
+**Status (Nov 26, 2026):** in progress. The core (encrypted link, link attacks
+and signed boot) is due Dec 18, 2026, and the full demo Jan 22, 2027. CAN,
+Ethernet, QSPI, the UART, the LEDs, the user button and the MPU are configured
+in CubeMX, and the generated code builds with no warnings. The on-board debugger
+runs J-Link firmware and connects to the chip. Nothing has run on the board yet,
+and no application code exists yet, so everything below describes the planned
+design. See [PLAN.md](PLAN.md) for the schedule and [TODO.md](TODO.md) for open
+questions.
 
 ## Documentation
 
@@ -40,6 +41,7 @@ exists yet. Everything below describes the planned design. See
 | [UART peripheral](documentation/peripheral_UART.md)                         | What the UART is for, USART1 settings and DMA options        |
 | [GPIO peripheral](documentation/peripheral_GPIO.md)                         | GPIO pin settings and the LD1 wiring                      |
 | [Job mapping](documentation/job-description-to-project-mapping.md)          | What part of the project covers each posting requirement  |
+| [Reference books](references/ebooks/reference_books.md)                     | Books used for this project, cited in IEEE style          |
 | [License](licensing/LICENSE)                                                | This project's license                                    |
 | [Third-party notices](licensing/third-party-notices.md)                     | Third-party software, its licenses and their conditions   |
 
@@ -68,12 +70,12 @@ exists yet. Everything below describes the planned design. See
 | "spacecraft"             |     Ethernet     | "ground station"     |
 |                          |   encrypted UDP  |                      |
 | Cortex-M7, FreeRTOS      |<================>| Raspberry Pi OS      |
-| Bootloader, Monocypher   |  direct cable,   | Python daemon        |
-| 16 MB QSPI flash         |    static IPs    | Attacker proxy       |
-| (update slots A and B)   |                  | (demos only)         |
+| Bootloader, Monocypher   |  + TFTP images,  | Python daemon        |
+| 16 MB QSPI flash         |  direct cable,   | Attacker proxy       |
+| (update slots A and B)   |    static IPs    | (demos only)         |
 +---+--------------+-------+                  +--------+-------------+
     |              |                                   |
-    | I2C2         | CAN1: PB9 TX, PB8 RX              | I2C (optional)
+    | I2C3         | CAN1: PB9 TX, PB8 RX              | I2C (optional)
     |              |                                   |
 +---+------+  +----+---------+                   +-----+--------+
 | ATECC608 |  | CAN          |                   | I2C IMU      |

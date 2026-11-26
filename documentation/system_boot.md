@@ -17,8 +17,14 @@ The firmware is three separate programs, each with its own linker script.
 | Application | FreeRTOS, CAN and the encrypted link                                 | Internal flash, `0x08040000`  |
 
 Two bootloader stages mean stage 2 could be fixed later while stage 1 stays
-permanently trusted. Merging them into one bootloader is the fallback if Week 2
-runs late, at the cost of never being able to safely update that bootloader.
+permanently trusted.
+
+> **Schedule, Nov 26:** Slice 4 builds one bootloader that checks the
+> application in internal flash, with images loaded by the J-Link. Slice 6 adds
+> slots A and B in QSPI with recovery, and Slice 7 adds TFTP updates. The
+> two-stage split isn't scheduled, so in this document "stage 2" means that one
+> bootloader, and it can't itself be safely updated. See
+> [PLAN.md](../PLAN.md#slice-4-week-of-dec-14-signed-boot).
 
 ## Slots A and B
 

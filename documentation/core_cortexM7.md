@@ -74,9 +74,9 @@ Where regions overlap, the higher number wins. Addresses outside every region
 use the default memory map, because the control mode is "privileged default"
 (`MPU_PRIVILEGED_DEFAULT`).
 
-**Decision, Nov 5:** set up all the application's regions now, in Week 1,
+**Decision, Nov 5:** set up all the application's regions now, before bring-up,
 together with MemManage fault reporting. Only the bootloader stages' own MPU
-setup waits for Week 2, because those programs don't exist yet.
+setup waits for Slice 4, because those programs don't exist yet.
 
 ### What it can and can't do here
 
@@ -256,7 +256,7 @@ status bits are left set, so they can also be read live.
 To read a fault in Ozone: look at `fault_record` in the watch window, and use
 the call stack to see the code that faulted.
 
-`fault_record` is in normal RAM, so a reset clears it. Week 2's persistent
+`fault_record` is in normal RAM, so a reset clears it. Slice 4's persistent
 fault log moves it to RAM that survives reset, and adds the reset reason.
 
 ### Tests
@@ -280,7 +280,7 @@ out, turn off its Enable setting in CubeMX.
 
 | Item | When |
 | ---- | ---- |
-| MPU setup in stage 1 and stage 2. Stage 2 needs internal flash writable to install images, and reads QSPI | Week 2 |
-| Stage 2 turns the MPU off before jumping, and the application's `MPU_Config` sets it up again | Week 2 |
-| Once the application moves to `0x08040000`, it must set `VTOR` itself | Week 2 |
+| MPU setup in the bootloader. It needs internal flash writable to install images, and reads the QSPI slots from Slice 6 | Slice 4 |
+| The bootloader turns the MPU off before jumping, and the application's `MPU_Config` sets it up again | Slice 4 |
+| Once the application moves to `0x08040000`, it must set `VTOR` itself | Slice 4 |
 | Make the flash controller registers read-only after `SystemClock_Config`, so code can't change option bytes such as RDP or WRP. Can't be in CubeMX's `MPU_Config`, which runs before the clock setup writes the flash wait states | Optional |

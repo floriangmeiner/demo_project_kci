@@ -1,14 +1,14 @@
 # Outstanding Work
 
-Open questions and unfinished setup work, last checked against the `.ioc` saved
-at 18:57 on Nov 5, 2026. The weekly tasks and schedule stay in
+Open questions and unfinished setup work, last checked on Nov 26, 2026 against
+the `.ioc` and code from Nov 6. The weekly tasks and schedule stay in
 [PLAN.md](PLAN.md).
 
 Nothing has run on the board yet, so every setting below is untested.
 
-## Finish the CubeMX settings
+## Finish the setup
 
-Make these changes in CubeMX, in this order, then regenerate and rebuild:
+The CubeMX settings are done. Two code edits remain, both in Slice 1:
 
 - [ ] **Fill in the two hook functions** in `freertos.c`. CubeMX generated them
       empty, so a detected overflow or failed allocation is ignored. See [What
@@ -26,7 +26,7 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
       at a breakpoint when a debugger is attached. See [MemManage fault
       reporting](documentation/core_cortexM7.md#memmanage-fault-reporting).
 - [x] **Enable lwIP's TFTP server.** Done Nov 5: `LWIP_TFTP` on, with
-      32-character filenames. The callbacks and `tftp_init` are Week 3 code.
+      32-character filenames. The callbacks and `tftp_init` are Slice 7 code.
       See [lwIP's TFTP
       server](documentation/peripheral_ETH.md#lwips-tftp-server).
 - [x] **Finish the USART1 interrupt and DMA setup.** Done Nov 5: USART1
@@ -68,17 +68,16 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
 
 ### Hardware
 
-- [ ] **How should the ATECC608 connect?** `PF0` and `PF1` (I2C2) run only to
-      the SDRAM address lines and have no header pin. I2C2's other pins are no
-      easier: `PB10`, `PB11` and `PH4` go to the USB HS PHY, and `PH5` to SDRAM
-      write enable. CN2 is on I2C1, which shares `PB8` and `PB9` with CAN1. The
-      CubeMX project has I2C2 on `PF0` and `PF1` until this is decided. The
-      options are:
-  - **I2C3 on `PA8` (D10) and `PC9` (microSD D1):** the recommendation. It needs
-    a microSD breakout.
-  - **Software I2C on spare header pins:** such as `PG6` (D2) and `PG7` (D4).
-  - **CAN1 on the CN13 fallback:** this frees I2C1 and CN2, but CAN through that
-    USB filter chip is untested. See [Pin assignments](PLAN.md#pin-assignments).
+- [x] **How should the ATECC608 connect?** Decided Nov 26: I2C3, with SCL on
+      `PA8` (Arduino D10) and SDA on `PC9`. `PC9` only reaches the microSD slot
+      (CN3), as the card's `DAT1` line, so a Saiko Systems ST-SD-uSDv2.0
+      adapter plugs into the slot and brings it out to a header. See [Pin
+      assignments](PLAN.md#pin-assignments) for the wiring. The CubeMX project
+      still has I2C2 on `PF0` and `PF1`; move it to I2C3 in Slice 8.
+  - **Why not the others:** I2C2's pins have no route (`PF0` and `PF1` go only
+    to SDRAM, `PB10`, `PB11` and `PH4` to the USB HS PHY, `PH5` to SDRAM), and
+    I2C1 shares `PB8` and `PB9` with CAN1. Software I2C on spare header pins
+    and moving CAN1 to CN13 were the other options.
 - [ ] **Where should the Ethernet buffers go?** The plan's SRAM2 location can't
       hold the 12 RX buffers. The recommendation is to leave them where the
       linker puts them for first bring-up. See [Memory
@@ -107,9 +106,9 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
 - [ ] **Should the vendor files go in a public repo?** `MB1191_B-01/` has the
       older schematic with `19176.xopp` and `19176_annotated.pdf`, which are
       staged. `vendors/` also holds the B-04 schematic, the Micron datasheet,
-      UM1907, RM0385 and DS10916. The recommendation is to link to ST's PDFs
-      instead, and keep the annotated copies private until ST's terms are
-      checked.
+      UM1907, RM0385, DS10916 and the Saiko Systems ST-SD-uSDv2.0 manual. The
+      recommendation is to link to ST's PDFs instead, and keep the annotated
+      copies private until ST's terms are checked.
 
 ### Threat model
 
@@ -146,6 +145,13 @@ Make these changes in CubeMX, in this order, then regenerate and rebuild:
 - [ ] **Confirm the QSPI flash chip with READ ID (`9Fh`)** once QSPI runs. A
       B-04 board should have the Micron N25Q128A, which returns `20h BAh 18h`.
       See [Flash chip](documentation/peripheral_QSPI.md#flash-chip).
+- [ ] Before wiring the ATECC608, check the ST-SD-uSDv2.0 adapter with a
+      continuity meter: J3's `DAT1` pad (microSD pin 8) should beep to J2 pin
+      1, and GND to J2 pin 3. The J2 pinout was read from the manual's
+      schematic, so it needs confirming.
+- [ ] Check the ATECC608 breakout has pull-ups on SDA and SCL. If not, add 4.7
+      kohm resistors to 3.3 V. The DISCO board only has a weak 47 kohm pull-up
+      on `PC9`, and none on `PA8`.
 - [ ] Confirm the owned transceivers have 3.3 V logic.
 - [ ] Note the CANopen module's bitrate, node ID, supply voltage and
       termination.

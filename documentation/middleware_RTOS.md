@@ -226,7 +226,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 ```
 
 The malloc-failed hook can do the same. Later, these are places to log the fault
-to the reset log planned in Week 2.
+to the reset log planned in Slice 4.
 
 ## Measuring stacks
 
