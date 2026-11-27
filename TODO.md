@@ -157,11 +157,14 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
 - [x] Check that LD1 blinks at 1 Hz after flashing. Done Nov 26: it blinks. So
       the clock setup, every `MX_..._Init` call and `MPU_Config` completed
       without reaching `Error_Handler` or a fault, and the scheduler runs.
-- [ ] Attach Ozone with RTOS awareness on, and check all eight threads exist:
+- [x] Attach Ozone and check `fault_record`. Done Nov 26: all fields are zero,
+      so no fault handler has run. The project is
+      `kepler_demo_ozone_setup.jdebug`; see [Debugging with
+      Ozone](documentation/build_system.md#debugging-with-ozone).
+- [x] In Ozone's **View > RTOS**, check all eight threads exist. Done Nov 26:
       `defaultTask`, `canOpenTask`, `linkTask`, `tcpip_thread`, `EthIf`,
-      `EthLink`, `IDLE` and `Tmr Svc`. `fault_record` should be all zeros. If
-      the board stopped in `record_fault`, a FreeRTOS hook or `Error_Handler`,
-      note where and the values.
+      `EthLink`, `IDLE` and `Tmr Svc` are all listed, so every thread was
+      created and the heap had room for them.
 - [x] Ping the board at `10.1.1.123` with the new build from a wired host.
       Done Nov 26: 10 of 10 replies, 0.40 to 0.56 ms, average 0.54 ms; the
       first took 1.05 ms because of ARP. An earlier test from a host on Wi-Fi

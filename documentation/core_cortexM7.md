@@ -266,7 +266,7 @@ the plan's guardrail on debug paths.
 
 | Test | Expected result |
 | ---- | --------------- |
-| Normal boot | No fault: QSPI init, Ethernet and the blink test all work |
+| Normal boot | No fault: QSPI init, Ethernet and the blink test all work. **Passed Nov 26:** LD1 blinks, pings answer, all eight threads run, and `fault_record` is all zeros |
 | Read `*(volatile uint32_t *)0` | MemManage fault, `MMFAR` = `0x0` |
 | Copy a `bx lr` instruction into a RAM buffer and call it | MemManage fault, instruction access violation |
 | Write to `0x08000000` | MemManage fault, `MMFAR` = `0x08000000` |
