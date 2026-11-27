@@ -31,7 +31,7 @@ void OnProjectLoad (void) {
   // User settings
   //
   Project.SetOSPlugin ("FreeRTOSPlugin_Cortex-M");
-  File.Open ("$(ProjectDir)/build/kepler_demo_stm32f746g-disco.elf");
+  File.Open ("$(ProjectDir)/../../build/app/kepler_demo_app.elf");
 }
 
 /*********************************************************************

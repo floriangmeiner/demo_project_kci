@@ -1,1 +1,5 @@
+# Copyrighted books
 references/ebooks/*.pdf
+
+# Output of our makefiles
+/build/

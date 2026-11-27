@@ -105,22 +105,84 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
       a debugger. See [What the UART is
       for](documentation/peripheral_UART.md#what-the-uart-is-for).
 
+### Build
+
+- [ ] **When should the build make several application versions?** Deferred
+      on Nov 27, to Slice 4 at the latest, when the boot demos need them. A and
+      B are QSPI slots, not separate programs: every version is linked for the
+      same internal flash address (see [Slots A and
+      B](documentation/system_boot.md#slots-a-and-b)). So the build needs
+      versions, not slot images:
+
+  | Variant | Settings | Used for |
+  | ------- | -------- | -------- |
+  | `v1_RED` | `VERSION=1 LED_COLOR=RED` | First install; later the old image the version check refuses |
+  | `v2_GREEN` | `VERSION=2 LED_COLOR=GREEN` | The good update |
+  | `v2_GREEN_noconfirm` | `VERSION=2 LED_COLOR=GREEN CONFIRM=0` | The A/B recovery demo |
+
+  The tampered and wrong-key images come from the signing script, not the
+  build. The proposed plan:
+  1. **Settings:** `VERSION`, `LED_COLOR` and `CONFIRM` in `app/Makefile`,
+     passed as `-DAPP_VERSION`, `-DAPP_LED_<colour>` and `-DAPP_CONFIRM`, and
+     only to `app/` files, so the CubeMX objects stay the same in every
+     variant.
+  2. **One output folder per variant,** such as `build/app/v2_GREEN/`, named
+     from the settings, so variants never overwrite or mix with each other. A
+     clean build takes about 2.6 s, so building each one in full is cheap.
+  3. **A `flags.txt` file per output folder** that the objects depend on, so
+     changed compiler flags always force a rebuild.
+  4. **Targets:** `make app VERSION=2 LED_COLOR=GREEN`, `make images` for all
+     three, and `make flash` with the same settings, which writes a J-Link
+     script for that variant.
+  5. **Move the LED code** from `StartDefaultTask` in `main.c` into
+     `app/src/app.c` as `app_run()`. Do this with the RTT work, which adds the
+     same file.
+
+  Slice 4 then adds an application linker script at `0x08040000`, an image
+  header with the version, and `make sign`. Slice 6 adds loading a QSPI slot
+  with the J-Link.
+  - **Until then, beware:** `make` doesn't rebuild when only flags change. After
+    passing different settings on the command line, such as `FW_OPT=-O2`, run
+    `make clean` first, or the build mixes old and new object files.
+
 ### Repository
 
-- [ ] **Should the vendor files go in a public repo?** They're all committed
-      now. `vendors/` holds:
-  - **ST:** the B-01 and B-04 schematics with their annotated copies, UM1907,
-    RM0385, DS10916 and the board's CAD models (`.step`, `.3mf`, `.zip`).
-    Two board photos sit beside them; if they're your own, they can stay.
-  - **Others:** the Micron N25Q128A datasheet, the Saiko Systems ST-SD-uSDv2.0
-    manual, Adafruit's ATECC608 breakout guide and schematic, and two Microchip
-    ATECC608A documents.
-  - **Also:** `references/job_description/` holds Kepler's job posting as a
-    PDF. The ebook PDF is already excluded by `.gitignore`.
-  - **Recommendation:** link to the vendors' PDFs instead, and keep the
-    annotated copies and the posting private until the terms are checked.
-    Because they're committed, they also need removing from the history before
-    the repo goes public.
+- [x] **Should the repo be public?** Decided Nov 27: yes, all of it, so
+      reviewers can see how the project was built. Only personal details,
+      secrets, and copyrighted material that can't be redistributed stay out.
+      The repo is already pushed to GitHub, so anything removed must also be
+      removed from the history. The steps are below.
+- [ ] **Personal details:** a scan on Nov 27 found nothing in the tracked text
+      files. Your personal email address is the author address on every
+      commit, though.
+  - Set `git config user.email` to your GitHub noreply address, and turn on
+    GitHub's "Keep my email addresses private" and "Block command line pushes
+    that expose my email".
+  - Rewrite the existing commits' author address with `git filter-repo
+    --mailmap` before the repo goes public.
+  - The board photos have no GPS data. The annotated schematics contain no
+    paths or names of yours.
+- [ ] **Copyrighted files:** deferred on Nov 27. The vendor files stay in the
+      repo for now, and how to handle them gets reviewed later. ST's documents
+      say "All rights reserved" and grant no license, so redistributing them
+      isn't permitted, although the realistic risk is a takedown request, not a
+      lawsuit. They also add 107 MB to the repo. The proposal for the review is
+      to keep only what's yours or licensed for redistribution, and link to the
+      rest.
+
+  | Keep | Remove, and link instead | Check the license first |
+  | ---- | ------------------------ | ----------------------- |
+  | Your code, docs and photos | ST: RM0385, DS10916, UM1907, the B-01 and B-04 schematics and their annotated PDFs | Adafruit's ATECC608 guide and schematic: Adafruit often uses CC BY-SA, which allows it with attribution |
+  | CubeMX output: HAL and BSP (BSD-3-Clause), CMSIS (Apache-2.0), FreeRTOS (MIT), lwIP (BSD-3-Clause) | Micron N25Q128A datasheet | The board CAD models: ST's `MB1191B-V14.step` and `.zip`. The `case_screen_side` files can stay if you designed the case |
+  | SEGGER RTT (BSD-style) | Microchip ATECC608A summary and app note | |
+  | The `.xopp` annotation files, which hold your notes and only refer to ST's PDF by name | Saiko Systems ST-SD-uSDv2.0 manual | |
+  | | Kepler's job posting PDF; the README already links to the posting | |
+
+  - Keep removed files locally, and add `.gitignore` rules so they can't be
+    committed again.
+  - Each removed file gets a link to its download page, for example in a
+    references list in `vendors/`.
+  - The ebook PDF is already excluded by `.gitignore`.
 
 ### Threat model
 
@@ -151,16 +213,19 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
 - [x] Flash the board through the J-Link. Done Nov 26 with `JLinkExe
       -CommandFile flash.jlink`, run from `kepler_demo_stm32f746g-disco/`. The
       first try failed with "Failed to open file." because `JLinkExe` was
-      started from the repo root. See
-      [Flashing](documentation/build_system.md#flashing).
+      started from the repo root.
+- [ ] Flash with `make flash` from the repo root, which uses the new
+      `tools/debug/flash_app.jlink` and the build in `build/app/`. Check that
+      LD1 blinks, and that the Ozone project at its new path still opens the
+      `.elf`. See [tools/debug/README.md](tools/debug/README.md).
 - [ ] Test RTT and SystemView through the J-Link.
 - [x] Check that LD1 blinks at 1 Hz after flashing. Done Nov 26: it blinks. So
       the clock setup, every `MX_..._Init` call and `MPU_Config` completed
       without reaching `Error_Handler` or a fault, and the scheduler runs.
 - [x] Attach Ozone and check `fault_record`. Done Nov 26: all fields are zero,
-      so no fault handler has run. The project is
-      `kepler_demo_ozone_setup.jdebug`; see [Debugging with
-      Ozone](documentation/build_system.md#debugging-with-ozone).
+      so no fault handler has run. The project is now
+      `tools/debug/kepler_demo_ozone_setup.jdebug`; see
+      [tools/debug/README.md](tools/debug/README.md).
 - [x] In Ozone's **View > RTOS**, check all eight threads exist. Done Nov 26:
       `defaultTask`, `canOpenTask`, `linkTask`, `tcpip_thread`, `EthIf`,
       `EthLink`, `IDLE` and `Tmr Svc` are all listed, so every thread was

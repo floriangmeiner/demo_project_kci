@@ -4,7 +4,7 @@ si SWD
 speed 4000
 connect
 r
-loadfile build/kepler_demo_stm32f746g-disco.hex
+loadfile build/app/kepler_demo_app.hex
 r
 g
 exit
