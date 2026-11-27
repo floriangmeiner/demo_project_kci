@@ -24,7 +24,9 @@ Run these from the repo root.
 Every build prints the RAM and flash use at the end.
 
 Flashing and debugging are explained in
-[tools/debug/README.md](../tools/debug/README.md).
+[tools/debug/README.md](../tools/debug/README.md). For charts of how the
+makefiles, targets, files and variables connect, see [Build Dependency
+Map](build_dependency_map.md).
 
 ## Layout
 
