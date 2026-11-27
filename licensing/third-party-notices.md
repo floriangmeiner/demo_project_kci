@@ -10,8 +10,14 @@ advice.
 
 ## Project license
 
-This project's own code is under the MIT License. See [LICENSE](LICENSE).
-Third-party software keeps its own license, as listed below.
+The MIT License in [LICENSE](LICENSE) covers only the original work of this
+project's author: the code, documentation and notes written for this project.
+It doesn't cover:
+
+- **Third-party software,** which keeps its own license, as listed below.
+- **Reference documents** such as datasheets, manuals, schematics and CAD
+  models, in `vendors/` and `references/`. They belong to their publishers. See
+  [Reference documents](#reference-documents).
 
 ## Software in the firmware
 
@@ -85,12 +91,36 @@ code they're used to build or check.
   the firmware. The GCC Runtime Library Exception covers code built with the
   compiler. Publishing copies of these tools themselves would bring GPL
   obligations.
-- **ST and other vendor documents:** datasheets and manuals are copyrighted by
-  their publishers. Check their terms before committing copies to a public
-  repository, and link to them otherwise. `vendors/st_microelectronics/`
-  currently holds copies of the board schematic, an annotated schematic, UM1907,
-  RM0385 and DS10916, and `vendors/micron/` holds the flash datasheet, so check
-  this before the repository goes public.
+- **Reference documents:** see the next section.
+
+## Reference documents
+
+The repository holds copies of documents published by others, kept only as a
+reference for the hardware and the role this project is built around. They're
+unmodified, all rights in them remain with their copyright holders, and this
+project claims no ownership of them and grants no rights to them. Removal
+requests from a rights holder will be honoured promptly.
+
+| Location | Contents | Copyright holder |
+| -------- | -------- | ---------------- |
+| `vendors/st_microelectronics/` | RM0385, DS10916, UM1907, MB1191 schematics (B-01 and B-04), board CAD models | STMicroelectronics |
+| `vendors/micron/` | N25Q128A datasheet | Micron Technology, Inc. |
+| `vendors/microchip/` | ATECC608A summary datasheet and application note | Microchip Technology Inc. |
+| `vendors/adafruit/` | ATECC608 breakout guide and schematic | Adafruit Industries |
+| `vendors/saiko_systems_ltd/` | ST-SD-uSDv2.0 manual | Saiko Systems Ltd. |
+| `references/job_description/` | The Embedded Software Designer job posting | Kepler Communications Inc. |
+
+- **Annotated schematics:** the notes in the `*_annotated.pdf` and `.xopp`
+  files are this project's own work. The schematics underneath remain ST's.
+- **Ebooks:** the book PDFs in `references/ebooks/` are excluded by
+  `.gitignore` and never committed. Only the citations are.
+- **Whether to keep the copies at all** is an open review in
+  [TODO.md](../TODO.md#repository). ST's documents, for example, say "All
+  rights reserved" and grant no license, so linking to them instead remains
+  the cleaner option.
+
+[vendors/README.md](../vendors/README.md) carries the same notice next to the
+files.
 
 ## Keeping this up to date
 

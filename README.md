@@ -45,8 +45,9 @@ questions.
 | [GPIO peripheral](documentation/peripheral_GPIO.md)                         | GPIO pin settings and the LD1 wiring                      |
 | [Job mapping](documentation/job-description-to-project-mapping.md)          | What part of the project covers each posting requirement  |
 | [Reference books](references/ebooks/reference_books.md)                     | Books used for this project, cited in IEEE style          |
-| [License](licensing/LICENSE)                                                | This project's license                                    |
-| [Third-party notices](licensing/third-party-notices.md)                     | Third-party software, its licenses and their conditions   |
+| [License](licensing/LICENSE)                                                | MIT, covering this project's own work only                |
+| [Third-party notices](licensing/third-party-notices.md)                     | Third-party software and documents, their licenses and owners |
+| [Third-party material](vendors/README.md)                                   | Datasheets, schematics and other documents kept for reference, and who owns them |
 
 ## What the demo shows
 
