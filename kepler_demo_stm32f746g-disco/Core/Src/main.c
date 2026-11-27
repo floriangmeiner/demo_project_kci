@@ -518,10 +518,12 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
-  /* Infinite loop */
+  /* Heartbeat: LD1 blinks at 1 Hz while the scheduler runs. A steady LED
+   * means this thread stopped, for example in a fault handler or hook. */
   for(;;)
   {
-    osDelay(1);
+    HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+    osDelay(500);
   }
   /* USER CODE END 5 */
 }

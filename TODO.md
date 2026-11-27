@@ -136,8 +136,20 @@ The CubeMX settings and code edits are done. Next is the first flash, under
 
 ## Check on hardware
 
-- [ ] Flash the board through the J-Link, then test RTT and SystemView. So far
-      only the SWD connection is confirmed.
+- [ ] Flash the board through the J-Link, then test RTT and SystemView. On Nov
+      26, `JLinkExe` connected over SWD and identified the Cortex-M7 r0p1, but
+      `loadfile` failed with "Failed to open file." because it was started from
+      the repo root and given a path relative to the firmware folder. Flash
+      again from `kepler_demo_stm32f746g-disco/` with `JLinkExe -CommandFile
+      flash.jlink`, and check that `loadfile` ends with `O.K.`. See
+      [Flashing](documentation/build_system.md#flashing).
+- [ ] Check that LD1 blinks at 1 Hz after flashing. `StartDefaultTask` toggles
+      it every 500 ms since Nov 26, so a steady LED means that thread stopped.
+- [ ] Ping the board at `10.1.1.123` again with the new build, and compare the
+      times. On Nov 26 the firmware already on the board answered 483 pings
+      through a switch with no loss, but took 2 to 5 ms with spikes up to 216
+      ms, where well under 1 ms is expected. Check the host's link to the
+      switch with `ip route get 10.1.1.123` (Wi-Fi would explain it).
 - [ ] Confirm the virtual COM port passes data with the J-Link firmware.
 - [x] Check the board's revision against the schematic. The sticker says
       `MB1191-B-04`, and the matching schematic is in

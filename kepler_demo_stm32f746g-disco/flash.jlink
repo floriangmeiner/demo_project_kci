@@ -1,0 +1,10 @@
+ExitOnError 1
+device STM32F746NG
+si SWD
+speed 4000
+connect
+r
+loadfile build/kepler_demo_stm32f746g-disco.hex
+r
+g
+exit

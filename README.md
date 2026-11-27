@@ -26,6 +26,7 @@ questions.
 | --------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [Plan](PLAN.md)                                                             | Schedule, materials, build layout and security demos      |
 | [To do](TODO.md)                                                            | Outstanding questions and unfinished setup work           |
+| [Build system](documentation/build_system.md)                               | Build and flash commands, tools, outputs and CubeMX regeneration |
 | [Boot](documentation/system_boot.md)                                               | The three programs, slots A and B, and boot checks        |
 | [Cryptography](documentation/system_cryptography.md)                               | What each cryptographic technique does and why it's used  |
 | [Memory](documentation/system_memory.md)                                           | Flash and RAM layout, and where keys and images live      |
@@ -35,6 +36,7 @@ questions.
 | [NVIC](documentation/core_NVIC.md)                                          | Interrupt priorities and the FreeRTOS limit               |
 | [FreeRTOS middleware](documentation/middleware_RTOS.md)                     | Threads, stack sizes, priorities and thread rules         |
 | [lwIP middleware](documentation/middleware_LWIP.md)                         | lwIP threads, key settings and the CubeMX stack-size unit problem |
+| [lwIP call flow](references/lwIP_call_flow.md)                              | Sequence diagrams of the lwIP send and receive paths      |
 | [Ethernet peripheral](documentation/peripheral_ETH.md)                      | Ethernet settings, DMA tradeoffs, memory and caches       |
 | [CAN peripheral](documentation/peripheral_CAN.md)                           | CAN1 pins, bit timing, sample point and interrupts        |
 | [QSPI peripheral](documentation/peripheral_QSPI.md)                         | QSPI settings, the flash size code, clock and pins        |
