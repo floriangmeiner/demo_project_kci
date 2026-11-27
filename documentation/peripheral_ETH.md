@@ -425,4 +425,7 @@ never cached and is already fast.
 
 - The FreeRTOS heap has room for the lwIP tasks, mailboxes and application
   tasks.
-- The Pi can ping `10.1.1.123` over the direct cable.
+- The Pi can ping `10.1.1.123`. On Nov 26, an earlier build already on the
+  board answered 483 pings with no loss, at 2 to 5 ms with spikes up to 216 ms.
+  The host was on Wi-Fi, which explains those times. Repeat it with the current
+  build from a wired host such as the Pi, where well under 1 ms is expected.

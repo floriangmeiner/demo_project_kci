@@ -1,10 +1,13 @@
 # Outstanding Work
 
 Open questions and unfinished setup work, last checked on Nov 26, 2026 against
-the `.ioc` and code from Nov 6. The weekly tasks and schedule stay in
-[PLAN.md](PLAN.md).
+the `.ioc` from Nov 6 and the code from Nov 26. The slice tasks and schedule
+stay in [PLAN.md](PLAN.md).
 
-Nothing has run on the board yet, so every setting below is untested.
+The current build hasn't run on the board yet, so every setting below is
+untested. An earlier build already on the board answers pings, which shows the
+J-Link, the cable and the Ethernet hardware work. See [Check on
+hardware](#check-on-hardware).
 
 ## Finish the setup
 
@@ -40,7 +43,7 @@ The CubeMX settings and code edits are done. Next is the first flash, under
       back on.** Done Nov 5: both are `ENABLE` in `main.c`, with 500 kbit/s
       timing. See [Settings](documentation/peripheral_CAN.md#settings).
 - [x] **Set the QSPI flash size field to 23.** Done Nov 5, and in the code. See
-  [Flash size](documentation/peripheral_QSPI.md#flash-size).
+      [Flash size](documentation/peripheral_QSPI.md#flash-size).
 - [x] **Switch the PLL from HSI to HSE.** Done Nov 5: HSE in bypass mode, M =
       25, N = 432, P = 2, Q = 9, giving 216 MHz, with APB1 still at 54 MHz. See
       [Setting it up in
@@ -103,12 +106,20 @@ The CubeMX settings and code edits are done. Next is the first flash, under
 
 ### Repository
 
-- [ ] **Should the vendor files go in a public repo?** `MB1191_B-01/` has the
-      older schematic with `19176.xopp` and `19176_annotated.pdf`, which are
-      staged. `vendors/` also holds the B-04 schematic, the Micron datasheet,
-      UM1907, RM0385, DS10916 and the Saiko Systems ST-SD-uSDv2.0 manual. The
-      recommendation is to link to ST's PDFs instead, and keep the annotated
-      copies private until ST's terms are checked.
+- [ ] **Should the vendor files go in a public repo?** They're all committed
+      now. `vendors/` holds:
+  - **ST:** the B-01 and B-04 schematics with their annotated copies, UM1907,
+    RM0385, DS10916 and the board's CAD models (`.step`, `.3mf`, `.zip`).
+    Two board photos sit beside them; if they're your own, they can stay.
+  - **Others:** the Micron N25Q128A datasheet, the Saiko Systems ST-SD-uSDv2.0
+    manual, Adafruit's ATECC608 breakout guide and schematic, and two Microchip
+    ATECC608A documents.
+  - **Also:** `references/job_description/` holds Kepler's job posting as a
+    PDF. The ebook PDF is already excluded by `.gitignore`.
+  - **Recommendation:** link to the vendors' PDFs instead, and keep the
+    annotated copies and the posting private until the terms are checked.
+    Because they're committed, they also need removing from the history before
+    the repo goes public.
 
 ### Threat model
 
@@ -145,11 +156,17 @@ The CubeMX settings and code edits are done. Next is the first flash, under
       [Flashing](documentation/build_system.md#flashing).
 - [ ] Check that LD1 blinks at 1 Hz after flashing. `StartDefaultTask` toggles
       it every 500 ms since Nov 26, so a steady LED means that thread stopped.
+- [ ] Attach Ozone with RTOS awareness on, and check all eight threads exist:
+      `defaultTask`, `canOpenTask`, `linkTask`, `tcpip_thread`, `EthIf`,
+      `EthLink`, `IDLE` and `Tmr Svc`. `fault_record` should be all zeros. If
+      the board stopped in `record_fault`, a FreeRTOS hook or `Error_Handler`,
+      note where and the values.
 - [ ] Ping the board at `10.1.1.123` again with the new build, and compare the
       times. On Nov 26 the firmware already on the board answered 483 pings
-      through a switch with no loss, but took 2 to 5 ms with spikes up to 216
-      ms, where well under 1 ms is expected. Check the host's link to the
-      switch with `ip route get 10.1.1.123` (Wi-Fi would explain it).
+      with no loss, at 2 to 5 ms with spikes up to 216 ms. The host reached
+      the switch over Wi-Fi, which explains those times. For a figure that
+      measures the board, ping from a wired host such as the Pi; well under 1
+      ms is expected.
 - [ ] Confirm the virtual COM port passes data with the J-Link firmware.
 - [x] Check the board's revision against the schematic. The sticker says
       `MB1191-B-04`, and the matching schematic is in
@@ -168,7 +185,7 @@ The CubeMX settings and code edits are done. Next is the first flash, under
 - [ ] Note the CANopen module's bitrate, node ID, supply voltage and
       termination.
 - [ ] Measure the thread stacks and free heap once everything is running. See
-  [Measuring stacks](documentation/middleware_RTOS.md#measuring-stacks).
+      [Measuring stacks](documentation/middleware_RTOS.md#measuring-stacks).
 
 ## Licenses
 

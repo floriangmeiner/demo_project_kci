@@ -368,7 +368,7 @@ Rules:
 
 ## Slice 1 (week of Nov 26): Bring-up and CAN Smoke Test
 
-**Estimate:** 2 working days. **Status:** Not started
+**Estimate:** 2 working days. **Status:** In progress (Nov 26)
 
 **Done when:** the board runs our code, and you know whether CAN works.
 
@@ -378,13 +378,18 @@ Rules:
 - [x] Decide how the ATECC608 connects. Decided Nov 26: I2C3 on `PA8` and
       `PC9`, through the microSD adapter. See [ATECC608
       wiring](#atecc608-wiring).
-- [ ] Make the two remaining code fixes in [TODO.md](TODO.md#finish-the-setup):
-      the FreeRTOS hook bodies and the `EthIf` stack.
-- [ ] Confirm the tools with `toolchain.sh verify`.
+- [x] Make the two remaining code fixes in [TODO.md](TODO.md#finish-the-setup):
+      the FreeRTOS hook bodies and the `EthIf` stack. Done Nov 26.
+- [x] Confirm the tools with `toolchain.sh verify`. Done Nov 26: every tool in
+      `stm32.conf` matches.
+- [ ] Flash with `flash.jlink` and check that LD1 blinks at 1 Hz. The blink and
+      the script were added Nov 26. The first `loadfile` failed on a wrong
+      path, so the board still runs an earlier build, which answers pings. See
+      [build_system.md](documentation/build_system.md#flashing).
 - [ ] Add our own `Makefile`, `mk/common.mk` and `app/Makefile` around the
-      generated project; flash, blink LD1 on PI1, and print logs over SEGGER
-      RTT. Copy the RTT source into `vendors/`, because CI can't see
-      `~/.embedded-tools`. Add `-Wl,--print-memory-usage` to the link flags.
+      generated project, and print logs over SEGGER RTT. Copy the RTT source
+      into `vendors/`, because CI can't see `~/.embedded-tools`. Add
+      `-Wl,--print-memory-usage` to the link flags.
 - [ ] Check the MPU on the board: a normal boot first, then the deliberate
       violation tests in a debug build. See
       [Tests](documentation/core_cortexM7.md#tests).
@@ -714,6 +719,13 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 26, 2026:** Started Slice 1. Filled in the FreeRTOS stack overflow and
+  malloc-failed hooks, raised the `EthIf` stack from 350 to 1024 bytes, made
+  `defaultTask` blink LD1 at 1 Hz as a heartbeat, and added `flash.jlink` and
+  [build_system.md](documentation/build_system.md). `toolchain.sh verify`
+  passes. The first J-Link session connected, but `loadfile` failed on a wrong
+  path, so the board still runs an earlier build. That build answered 483 pings
+  with no loss, at 2 to 5 ms with spikes up to 216 ms, from a host on Wi-Fi.
 - **Nov 26, 2026:** Chose the ATECC608 wiring: I2C3, with SCL on `PA8` (D10)
   and SDA on `PC9` through a Saiko Systems ST-SD-uSDv2.0 adapter in the microSD
   slot. Added the adapter to Materials and its pinout and the wiring to Pin

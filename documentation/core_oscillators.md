@@ -87,9 +87,9 @@ real crystal, nothing would drive the crystal, so the clock wouldn't start.
 - **Shared with Ethernet:** the same net feeds the LAN8742 PHY, so Ethernet's 25
   MHz doesn't depend on the STM32's clock settings. See
   [peripheral_ETH.md](peripheral_ETH.md).
-- **R30:** a 100 Ω resistor in series with `PH0`. The schematic doesn't say why,
-  but a series resistor like this is commonly used to reduce ringing on a clock
-  line.
+- **R30:** a 100 Ω resistor in series with `PH0`. The schematic doesn't say
+  why, but a series resistor like this is commonly used to reduce ringing on a
+  clock line.
 - **`PH1`:** free in bypass mode, though it has no route to a header on this
   board.
 

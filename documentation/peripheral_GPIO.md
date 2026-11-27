@@ -61,6 +61,14 @@ PI1 ── SB8 ── R59 (510 Ω) ── LD1 (green) ── GND
 - **Shared pin:** `PI1` is also D13 on CN7, so it can't be used as a clean SPI
   clock while it drives the LED. The plan doesn't use D13.
 
+### Heartbeat
+
+Since Nov 26, `StartDefaultTask` in `main.c` toggles LD1 every 500 ms with
+`HAL_GPIO_TogglePin` and `osDelay(500)`, so it blinks at 1 Hz while the
+scheduler runs. A steady LED, on or off, means that thread has stopped, for
+example in a fault handler, a FreeRTOS hook or `Error_Handler`. It hasn't been
+seen on the board yet.
+
 ## Why push-pull
 
 LD1 has to be driven high, and an open-drain output can only pull a pin low or

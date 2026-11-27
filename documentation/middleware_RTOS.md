@@ -95,7 +95,9 @@ These are defined in the `.ioc`. One word is 4 bytes.
 What each one does:
 
 - **`defaultTask`:** calls `MX_LWIP_Init()`, starts the rest of the application,
-  then exits or idles. Exiting returns its stack to the heap.
+  then exits or idles. Exiting returns its stack to the heap. For now it blinks
+  LD1 at 1 Hz as a heartbeat, which also shows the scheduler is running. See
+  [Heartbeat](peripheral_GPIO.md#heartbeat).
 - **`canOpenTask`:** polls the module's inputs over SDO, watches its heartbeat,
   and applies output commands.
 - **`linkTask`:** owns the UDP socket and session keys, runs the handshake,
