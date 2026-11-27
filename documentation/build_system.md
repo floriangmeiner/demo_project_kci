@@ -17,7 +17,7 @@ Run these from the firmware folder, `kepler_demo_stm32f746g-disco/`.
 | Show RAM and flash use | `make LIBDIR=-Wl,--print-memory-usage -W build/main.o` |
 | Show section sizes | `arm-none-eabi-size build/kepler_demo_stm32f746g-disco.elf` |
 | Flash | `JLinkExe -CommandFile flash.jlink` |
-| Debug | `Ozone`, then open `build/kepler_demo_stm32f746g-disco.elf` |
+| Debug | `Ozone`; see [Debugging with Ozone](#debugging-with-ozone) |
 | Check the tools | `../tools/embedded_dev_tooling/toolchain.sh verify stm32` |
 
 ### Flashing
@@ -56,6 +56,47 @@ firmware, which is what happened on Nov 26.
 To flash by hand instead, start `JLinkExe -device STM32F746NG -if SWD -speed
 4000 -autoconnect 1` and type the commands from `r` onwards at the `J-Link>`
 prompt.
+
+### Debugging with Ozone
+
+The Ozone project is
+[`kepler_demo_ozone_setup.jdebug`](../kepler_demo_stm32f746g-disco/kepler_demo_ozone_setup.jdebug)
+in the firmware folder. Open it with **File > Open**, or `Ozone
+kepler_demo_ozone_setup.jdebug`. It sets up:
+
+| Setting | Value |
+| ------- | ----- |
+| Device | `STM32F746NG` |
+| Connection | J-Link, SWD, 4 MHz, USB |
+| Register descriptions | Ozone's `Cortex-M7F.svd`, which covers the core registers, including the fault registers in the SCB, but not the STM32 peripherals |
+| Program file | `$(ProjectDir)/build/kepler_demo_stm32f746g-disco.elf` |
+| RTOS awareness | `FreeRTOSPlugin_Cortex-M` |
+
+**FreeRTOS awareness** comes from this line in the project's `OnProjectLoad`,
+under "User settings":
+
+```c
+Project.SetOSPlugin ("FreeRTOSPlugin_Cortex-M");
+```
+
+When the project loads, the Console should say `RTOS awareness plugin loaded:
+.../FreeRTOSPlugin_Cortex-M.js`. **View > RTOS** then lists every thread with
+its state, priority and stack.
+
+- **Use `FreeRTOSPlugin_Cortex-M`, not `FreeRTOSPlugin_CM7`.** Both ship with
+  Ozone V350a and cover the Cortex-M7, but SEGGER has deprecated the CM7 plugin.
+- **Typing the command in the Console only lasts for that session.** Ozone
+  doesn't save it into the project, so it has to be in the `.jdebug` file.
+- **To recreate the project,** use the New Project Wizard with the settings
+  above, then add the `SetOSPlugin` line by hand.
+- **Delete any `Project.AddPathSubstitute` lines before committing.** Ozone
+  may add them when it saves. They contain the absolute path of your checkout,
+  and aren't needed: each machine's `.elf` records its own build folder, so
+  Ozone finds the sources without them.
+
+To look at the running firmware without reflashing it, use **Debug > Start
+Debug Session > Attach to Running Program**, then Halt. While the CPU is halted,
+LD1 stops blinking and the board doesn't answer pings.
 
 ## Tools
 
