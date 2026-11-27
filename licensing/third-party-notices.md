@@ -33,8 +33,8 @@ binary and their notices have to be kept.
 | STM32F7 HAL and BSP          | Peripherals, QSPI       | BSD-3-Clause                                             | [STM32CubeF7 LICENSE.md](https://github.com/STMicroelectronics/STM32CubeF7/blob/master/LICENSE.md) | HAL in use (FW_F7 V1.17.4) |
 | CMSIS and CMSIS Device       | Cortex-M support        | Apache-2.0                                               | [STM32CubeF7 LICENSE.md](https://github.com/STMicroelectronics/STM32CubeF7/blob/master/LICENSE.md) | In use (FW_F7 V1.17.4) |
 | ST example projects          | Starting point for lwIP and QSPI | SLA0044, or BSD-3-Clause for basic examples (see conditions) | [STM32CubeF7 LICENSE.md](https://github.com/STMicroelectronics/STM32CubeF7/blob/master/LICENSE.md) | Planned |
-| SEGGER RTT                   | Logging                 | SEGGER BSD-style license                                 | [LICENSE.md](../vendors/segger/rtt/LICENSE.md)                                                | In `vendors/segger/rtt/` (V8.58.0), not built yet |
-| SEGGER SystemView target code | RTOS tracing           | Not checked                                              | Check the source file headers when added                                                      | Planned |
+| SEGGER RTT                   | Transport for SystemView | SEGGER BSD-style license                                | [LICENSE.md](https://github.com/SEGGERMicro/RTT/blob/V8.58.0/LICENSE.md)                      | Git submodule at `vendors/segger/rtt/` (V8.58.0), not built yet |
+| SEGGER SystemView target code | RTOS tracing           | SEGGER BSD-style license, the same terms as RTT (checked in the source headers, Nov 27) | [SEGGER_SYSVIEW.c header](https://github.com/SEGGERMicro/SystemView/blob/V4.10/SYSVIEW/SEGGER_SYSVIEW.c) | Git submodule at `vendors/segger/systemview/` (V4.10), not built yet |
 | newlib                       | C library, via the toolchain | Several permissive licenses, varying by file        | [COPYING.NEWLIB](https://sourceware.org/git/?p=newlib-cygwin.git;a=blob_plain;f=COPYING.NEWLIB;hb=HEAD) | In use |
 
 ## Software on the ground station

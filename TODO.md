@@ -257,7 +257,10 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
 
 ## Licenses
 
-- [ ] Check the SEGGER SystemView target code's license when it's added.
+- [x] Check the SEGGER SystemView target code's license when it's added. Done
+      Nov 27: the same BSD-style terms as RTT, which allow redistribution if
+      the copyright notice is kept. It's a git submodule at
+      `vendors/segger/systemview/`, pinned to V4.10.
 - [ ] Confirm which SEGGER license covers Ozone with J-Link OB, and whether the
       Friendly License covers a portfolio project made while job hunting.
 - [ ] Check the Ubuntu `gcc-arm-none-eabi` package terms, GNU Make's license and

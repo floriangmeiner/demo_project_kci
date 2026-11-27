@@ -32,9 +32,15 @@ notes as editable layers over the schematic PDF in the same folder.
 
 | Folder | Contents | License |
 | ------ | -------- | ------- |
-| `segger/rtt/` | SEGGER RTT 8.58.0, built into the firmware | SEGGER's BSD-style license in [`segger/rtt/LICENSE.md`](segger/rtt/LICENSE.md) |
+| `segger/rtt/` | SEGGER RTT, a git submodule of [SEGGERMicro/RTT](https://github.com/SEGGERMicro/RTT) pinned to tag V8.58.0 | SEGGER's BSD-style license, in [LICENSE.md](https://github.com/SEGGERMicro/RTT/blob/V8.58.0/LICENSE.md) |
+| `segger/systemview/` | SEGGER SystemView target code, a git submodule of [SEGGERMicro/SystemView](https://github.com/SEGGERMicro/SystemView) pinned to tag V4.10 | SEGGER's BSD-style license, in each source file's header |
 
 Source code here keeps its own license, which allows it to be redistributed.
+Both SEGGER folders are git submodules: this repository records only which
+commit to use, and the files come from SEGGER's own repositories. They're
+unmodified, and our settings for them live in `app/`. Only some of their files
+are built; for example, RTT's `Syscalls/` folder isn't, because it routes
+newlib's `printf` through the heap.
 See [third-party-notices.md](../licensing/third-party-notices.md) for every
 third-party component and its conditions.
 

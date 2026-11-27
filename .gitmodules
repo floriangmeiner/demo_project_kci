@@ -1,3 +1,9 @@
 [submodule "tools/embedded_dev_tooling"]
 	path = tools/embedded_dev_tooling
 	url = https://github.com/floriangmeiner/embedded_dev_tooling
+[submodule "vendors/segger/systemview"]
+	path = vendors/segger/systemview
+	url = https://github.com/SEGGERMicro/SystemView.git
+[submodule "vendors/segger/rtt"]
+	path = vendors/segger/rtt
+	url = https://github.com/SEGGERMicro/RTT.git

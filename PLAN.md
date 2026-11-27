@@ -389,9 +389,10 @@ Rules:
       the script works and LD1 blinks. It's now `tools/debug/flash_app.jlink`,
       run with `make flash`. See
       [tools/debug/README.md](tools/debug/README.md).
-- [x] Copy the RTT source into `vendors/`, because CI can't see
-      `~/.embedded-tools`. Done Nov 27: `vendors/segger/rtt/`, V8.58.0,
-      unmodified.
+- [x] Get the RTT source into the repo, because CI can't see
+      `~/.embedded-tools`. Done Nov 27: git submodules of SEGGER's GitHub
+      repos, RTT at `vendors/segger/rtt/` (V8.58.0) and SystemView at
+      `vendors/segger/systemview/` (V4.10).
 - [x] Add our own `Makefile`, `mk/common.mk` and `app/Makefile` around the
       generated project, with `-Wl,--print-memory-usage` in the link flags.
       Done Nov 27, plus `mk/cube.mk`, which reads the generated Makefile's
@@ -734,8 +735,9 @@ When applying, use the posting's title: "Embedded Software Designer".
   They read the CubeMX Makefile's file lists instead of copying them, so the
   build layout no longer says "hand-written". The flash image matches CubeMX's
   byte for byte. Moved the flash script and Ozone project to `tools/debug/`,
-  copied SEGGER RTT 8.58.0 into `vendors/segger/rtt/`, and decided to make the
-  whole repo public, with the copyright review deferred.
+  added SEGGER RTT (V8.58.0) and SystemView (V4.10) as git submodules under
+  `vendors/segger/`, replacing a copied-in RTT, and decided to make the whole
+  repo public, with the copyright review deferred.
 - **Nov 26, 2026:** Started Slice 1. Filled in the FreeRTOS stack overflow and
   malloc-failed hooks, raised the `EthIf` stack from 350 to 1024 bytes, made
   `defaultTask` blink LD1 at 1 Hz as a heartbeat, and added `flash.jlink` and
