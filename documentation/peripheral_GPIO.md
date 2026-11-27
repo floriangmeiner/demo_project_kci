@@ -66,8 +66,8 @@ PI1 ── SB8 ── R59 (510 Ω) ── LD1 (green) ── GND
 Since Nov 26, `StartDefaultTask` in `main.c` toggles LD1 every 500 ms with
 `HAL_GPIO_TogglePin` and `osDelay(500)`, so it blinks at 1 Hz while the
 scheduler runs. A steady LED, on or off, means that thread has stopped, for
-example in a fault handler, a FreeRTOS hook or `Error_Handler`. It hasn't been
-seen on the board yet.
+example in a fault handler, a FreeRTOS hook or `Error_Handler`. Confirmed on
+the board on Nov 26.
 
 ## Why push-pull
 

@@ -4,15 +4,16 @@ Open questions and unfinished setup work, last checked on Nov 26, 2026 against
 the `.ioc` from Nov 6 and the code from Nov 26. The slice tasks and schedule
 stay in [PLAN.md](PLAN.md).
 
-The current build hasn't run on the board yet, so every setting below is
-untested. An earlier build already on the board answers pings, which shows the
-J-Link, the cable and the Ethernet hardware work. See [Check on
+The current build runs on the board since Nov 26: it flashes, starts, blinks
+LD1 and answers pings in about 0.5 ms. Ethernet and lwIP work. For the other
+peripherals, start-up working means they initialised, not that they work, so
+their settings are still untested in use. See [Check on
 hardware](#check-on-hardware).
 
 ## Finish the setup
 
-The CubeMX settings and code edits are done. Next is the first flash, under
-[Check on hardware](#check-on-hardware).
+The CubeMX settings and code edits are done, and the build runs on the board.
+The remaining checks are under [Check on hardware](#check-on-hardware).
 
 - [x] **Fill in the two hook functions** in `freertos.c`. Done Nov 26: both stop
       the board, at a breakpoint when a debugger is attached. See [What the
@@ -147,26 +148,25 @@ The CubeMX settings and code edits are done. Next is the first flash, under
 
 ## Check on hardware
 
-- [ ] Flash the board through the J-Link, then test RTT and SystemView. On Nov
-      26, `JLinkExe` connected over SWD and identified the Cortex-M7 r0p1, but
-      `loadfile` failed with "Failed to open file." because it was started from
-      the repo root and given a path relative to the firmware folder. Flash
-      again from `kepler_demo_stm32f746g-disco/` with `JLinkExe -CommandFile
-      flash.jlink`, and check that `loadfile` ends with `O.K.`. See
+- [x] Flash the board through the J-Link. Done Nov 26 with `JLinkExe
+      -CommandFile flash.jlink`, run from `kepler_demo_stm32f746g-disco/`. The
+      first try failed with "Failed to open file." because `JLinkExe` was
+      started from the repo root. See
       [Flashing](documentation/build_system.md#flashing).
-- [ ] Check that LD1 blinks at 1 Hz after flashing. `StartDefaultTask` toggles
-      it every 500 ms since Nov 26, so a steady LED means that thread stopped.
+- [ ] Test RTT and SystemView through the J-Link.
+- [x] Check that LD1 blinks at 1 Hz after flashing. Done Nov 26: it blinks. So
+      the clock setup, every `MX_..._Init` call and `MPU_Config` completed
+      without reaching `Error_Handler` or a fault, and the scheduler runs.
 - [ ] Attach Ozone with RTOS awareness on, and check all eight threads exist:
       `defaultTask`, `canOpenTask`, `linkTask`, `tcpip_thread`, `EthIf`,
       `EthLink`, `IDLE` and `Tmr Svc`. `fault_record` should be all zeros. If
       the board stopped in `record_fault`, a FreeRTOS hook or `Error_Handler`,
       note where and the values.
-- [ ] Ping the board at `10.1.1.123` again with the new build, and compare the
-      times. On Nov 26 the firmware already on the board answered 483 pings
-      with no loss, at 2 to 5 ms with spikes up to 216 ms. The host reached
-      the switch over Wi-Fi, which explains those times. For a figure that
-      measures the board, ping from a wired host such as the Pi; well under 1
-      ms is expected.
+- [x] Ping the board at `10.1.1.123` with the new build from a wired host.
+      Done Nov 26: 10 of 10 replies, 0.40 to 0.56 ms, average 0.54 ms; the
+      first took 1.05 ms because of ARP. An earlier test from a host on Wi-Fi
+      took 2 to 5 ms with spikes up to 216 ms, which was the Wi-Fi link, not
+      the board.
 - [ ] Confirm the virtual COM port passes data with the J-Link firmware.
 - [x] Check the board's revision against the schematic. The sticker says
       `MB1191-B-04`, and the matching schematic is in

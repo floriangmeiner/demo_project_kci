@@ -3,8 +3,8 @@
 How the STM32F746G-DISCO firmware is built and flashed, which tools it uses,
 and what to watch for when CubeMX regenerates the project.
 
-Last checked on Nov 26, 2026. The build works and gives no warnings. Flashing
-through the J-Link hasn't been tested on the board yet.
+Last checked on Nov 26, 2026. The build works and gives no warnings, and
+flashing with `flash.jlink` works on the board.
 
 ## Quick commands
 

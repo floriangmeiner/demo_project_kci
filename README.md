@@ -15,10 +15,10 @@ module's outputs.
 and signed boot) is due Dec 18, 2026, and the full demo Jan 22, 2027. CAN,
 Ethernet, QSPI, the UART, the LEDs, the user button and the MPU are configured
 in CubeMX, and the generated code builds with no warnings. The on-board debugger
-runs J-Link firmware and connects to the chip, and an earlier build already on
-the board answers pings over Ethernet. The current build, with the MPU, fault
-reporting and an LD1 heartbeat, hasn't been flashed yet. No other application
-code exists yet, so everything below describes the planned design. See [PLAN.md](PLAN.md) for the schedule and [TODO.md](TODO.md) for open
+runs J-Link firmware. The current build, with the MPU, fault reporting and an
+LD1 heartbeat, flashes and runs on the board, and answers pings over Ethernet
+in about 0.5 ms. No other application code exists yet, so everything below
+describes the planned design. See [PLAN.md](PLAN.md) for the schedule and [TODO.md](TODO.md) for open
 questions.
 
 ## Documentation
