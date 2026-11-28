@@ -4,8 +4,14 @@ What the UART is for in this project, how USART1 and its DMA are set up on the
 STM32F746G-DISCO, and what each CubeMX DMA setting means.
 
 Values are from the CubeMX project (`kepler_demo_stm32f746g-disco.ioc`) and the
-generated code. DMA facts are from RM0385 Rev 9. Nothing has been tested on
-hardware.
+generated code. DMA facts are from RM0385 Rev 9.
+
+**Tested on Nov 27, 2026:** sending works. `defaultTask` sends one polled line,
+`Kepler demo: boot complete`, at each boot, and it arrives on `/dev/ttyACM0`
+at 115200 8N1 through the J-Link's virtual COM port, after both `make flash`
+and the reset button. To watch it, run `screen /dev/ttyACM0 115200` before
+resetting the board. Receiving and DMA aren't tested yet; they come with the
+console in Slice 2.
 
 > **Open issue:** the purpose below is a proposal until it's agreed. The CubeMX
 > setup matches [Recommended setup](#recommended-setup).

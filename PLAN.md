@@ -407,7 +407,10 @@ Rules:
       violation tests in a debug build. The normal boot passed Nov 26: LD1
       blinks, all eight threads run, and `fault_record` is all zeros. See
       [Tests](documentation/core_cortexM7.md#tests).
-- [ ] Send a line out of the UART and confirm it arrives on `/dev/ttyACM0`.
+- [x] Send a line out of the UART and confirm it arrives on `/dev/ttyACM0`.
+      Done Nov 27: a polled boot line from `defaultTask` arrives at 115200
+      8N1, after flashing and after a reset. See
+      [peripheral_UART.md](documentation/peripheral_UART.md).
 - [ ] CAN smoke test (timebox: 2 hours): confirm the transceiver has 3.3 V
       logic, note the module's bitrate, node ID, supply voltage and
       termination, and exchange one frame with it. Use the logic analyzer on TX
@@ -733,6 +736,8 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 27, 2026:** The UART works: a polled boot line from `defaultTask`
+  arrives on `/dev/ttyACM0` through the J-Link's virtual COM port.
 - **Nov 27, 2026:** Chose SEGGER SystemView over plain RTT logging, for its
   timeline of threads and interrupts, and added it: FreeRTOS trace hooks,
   eight traced interrupts, `LOG()` messages, heap plots, timing markers and

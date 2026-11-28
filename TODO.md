@@ -245,6 +245,9 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
   - [x] With SystemView closed, LD1 still blinks and pings still answer.
     Checked Nov 27, after a reset and before recording, with the firmware
     recording from boot and nothing reading the buffer.
+- [x] Send a line out of the UART. Done Nov 27: `Kepler demo: boot complete`
+      arrives on `/dev/ttyACM0` at 115200 8N1, after `make flash` and after
+      the reset button.
 - [x] Check that LD1 blinks at 1 Hz after flashing. Done Nov 26: it blinks. So
       the clock setup, every `MX_..._Init` call and `MPU_Config` completed
       without reaching `Error_Handler` or a fault, and the scheduler runs.

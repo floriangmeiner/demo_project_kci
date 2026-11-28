@@ -526,6 +526,13 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN 5 */
+  /* UART smoke test: one line to the virtual COM port (/dev/ttyACM0,
+   * 115200 8N1). Polled, so it needs no DMA or interrupts; the console
+   * replaces it in Slice 2. */
+  static const char uart_boot_line[] = "Kepler demo: boot complete\r\n";
+  (void)HAL_UART_Transmit(&huart1, (const uint8_t *)uart_boot_line,
+                          sizeof(uart_boot_line) - 1u, 100u);
+
   /* Heartbeat: LD1 blinks at 1 Hz while the scheduler runs. A steady LED
    * means this thread stopped, for example in a fault handler or hook. */
 #if FW_SYSVIEW
