@@ -218,7 +218,33 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
       `tools/debug/flash_app.jlink` and the build in `build/app/`. Check that
       LD1 blinks, and that the Ozone project at its new path still opens the
       `.elf`. See [tools/debug/README.md](tools/debug/README.md).
-- [ ] Test RTT and SystemView through the J-Link.
+- [x] **Record with SystemView.** Done Nov 27. Recording works since Nov 27: about 985,000
+      events over 2 minutes, with the application name and version
+      (`8208283-dirty`) shown. See
+      [Recording](documentation/tracing_systemview.md#recording).
+  - [x] All eight threads appear, and every interrupt shows by name.
+  - [x] `defaultTask` runs every 500 ms: 0.500 000 106 s between runs, each
+    taking 15.8 µs to toggle LD1 and send both heap samples.
+  - [x] The Terminal shows a status line every 10 s.
+  - [x] The heap samples arrive: "Free heap" and "Lowest free heap", 10,952
+    bytes each, as Data Sample events, and the Data Plot shows both channels
+    with their units.
+  - [x] SystemView reads the clock as 216 MHz, so timestamps are real time.
+    No overflows at 7,382 events/s without network traffic.
+  - [x] The boot message: press reset, then start recording. Pressing reset
+    while recording doesn't work: the reset stops the recording (Nov 27).
+    The firmware now starts recording when `defaultTask` starts. Checked Nov
+    27: the boot message shows at 0.48 ms, with the thread list.
+  - [x] Pinging the board shows the `ETH` interrupt, then `EthIf`, then
+    `tcpip_thread`. Measured on Nov 27: receive interrupt 11.1 µs, `EthIf`
+    56.6 µs, `tcpip_thread` waits 15.9 µs for the higher-priority `EthIf`,
+    then runs 93.0 µs, is interrupted by the transmit-complete `ETH`
+    interrupt, and finishes in 35.4 µs: about 210 µs per ping on the board.
+  - [x] The recording shows no overflow gaps during the ping. Checked Nov 27:
+    0 overflows in 8.7 s and 62,333 events, including the ping.
+  - [x] With SystemView closed, LD1 still blinks and pings still answer.
+    Checked Nov 27, after a reset and before recording, with the firmware
+    recording from boot and nothing reading the buffer.
 - [x] Check that LD1 blinks at 1 Hz after flashing. Done Nov 26: it blinks. So
       the clock setup, every `MX_..._Init` call and `MPU_Config` completed
       without reaching `Error_Handler` or a fault, and the scheduler runs.
@@ -254,6 +280,9 @@ The remaining checks are under [Check on hardware](#check-on-hardware).
       termination.
 - [ ] Measure the thread stacks and free heap once everything is running. See
       [Measuring stacks](documentation/middleware_RTOS.md#measuring-stacks).
+      Heap measured Nov 27 with SystemView: 10,952 bytes free, and the lowest
+      it has been is also 10,952, steady over 160 s. Measure again once the
+      link and CANopen code run. Thread stacks are still to measure.
 
 ## Licenses
 

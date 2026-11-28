@@ -10,6 +10,11 @@ build.
 | [`flash_app.jlink`](flash_app.jlink) | J-Link Commander (`JLinkExe`) | Programs the application into the chip's flash and starts it |
 | [`kepler_demo_ozone_setup.jdebug`](kepler_demo_ozone_setup.jdebug) | Ozone | The debugger project: chip, connection, program file and FreeRTOS awareness |
 
+SEGGER SystemView, for tracing and logging, needs no project file: its
+settings are made once in the app. See [Tracing with
+SystemView](../../documentation/tracing_systemview.md#recording). SystemView
+and Ozone both use the J-Link, so close one before using the other.
+
 ## `flash_app.jlink`
 
 A J-Link Commander script. Run it with `make flash` from the repo root, which

@@ -23,7 +23,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+/* SEGGER SystemView, only in our build; see app/inc/trace.h */
+#if FW_SYSVIEW
+#include "trace.h"
+#include "log.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -134,7 +138,11 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+#if FW_SYSVIEW
+  /* After the clock setup, so timestamps use 216 MHz, and before any
+   * FreeRTOS object exists, so SystemView records every thread */
+  trace_init();
+#endif
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -520,9 +528,17 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN 5 */
   /* Heartbeat: LD1 blinks at 1 Hz while the scheduler runs. A steady LED
    * means this thread stopped, for example in a fault handler or hook. */
+#if FW_SYSVIEW
+  trace_start();
+  LOG("Boot complete: scheduler and network running");
+#endif
   for(;;)
   {
     HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+#if FW_SYSVIEW
+    /* Plot the heap every 500 ms, log a status line every 10 s */
+    trace_periodic();
+#endif
     osDelay(500);
   }
   /* USER CODE END 5 */

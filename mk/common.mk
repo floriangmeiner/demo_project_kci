@@ -7,6 +7,7 @@
 #   SRCS       every .c, .s and .S file to build, as paths under $(ROOT)
 #   INCLUDES   -I flags
 #   LDSCRIPT_FILE  linker script
+#   FW_DEFS    optional -D flags for every file
 # and includes mk/cube.mk first, for the CUBE_* variables.
 #
 # See documentation/build_system.md.
@@ -26,7 +27,7 @@ OBJDIR := $(OUT)/obj
 
 # Flags shared by C and assembly. The same as the generated Makefile, which
 # also compiles the startup file with its C flags.
-FW_COMMON := $(CUBE_MCU) $(CUBE_DEFS) $(FW_OPT) -Wall \
+FW_COMMON := $(CUBE_MCU) $(CUBE_DEFS) $(FW_DEFS) $(FW_OPT) -Wall \
              -fdata-sections -ffunction-sections
 
 # Shorten source paths in __FILE__, which lwIP's assert messages store in

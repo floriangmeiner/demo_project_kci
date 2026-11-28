@@ -22,6 +22,14 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+/* SEGGER SystemView interrupt tracing, only in our build; see
+ * app/inc/trace.h. In CubeMX's own build the macros do nothing. */
+#if FW_SYSVIEW
+#include "trace.h"
+#else
+#define TRACE_ISR_ENTER() ((void)0)
+#define TRACE_ISR_EXIT()  ((void)0)
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -202,11 +210,11 @@ void DebugMon_Handler(void)
 void CAN1_TX_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_TX_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END CAN1_TX_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_TX_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END CAN1_TX_IRQn 1 */
 }
 
@@ -216,11 +224,11 @@ void CAN1_TX_IRQHandler(void)
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END CAN1_RX0_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END CAN1_RX0_IRQn 1 */
 }
 
@@ -230,11 +238,11 @@ void CAN1_RX0_IRQHandler(void)
 void CAN1_RX1_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX1_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END CAN1_RX1_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_RX1_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END CAN1_RX1_IRQn 1 */
 }
 
@@ -244,11 +252,11 @@ void CAN1_RX1_IRQHandler(void)
 void CAN1_SCE_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_SCE_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END CAN1_SCE_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_SCE_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END CAN1_SCE_IRQn 1 */
 }
 
@@ -258,11 +266,11 @@ void CAN1_SCE_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END USART1_IRQn 1 */
 }
 
@@ -286,11 +294,11 @@ void TIM6_DAC_IRQHandler(void)
 void DMA2_Stream2_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA2_Stream2_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END DMA2_Stream2_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart1_rx);
   /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END DMA2_Stream2_IRQn 1 */
 }
 
@@ -300,11 +308,11 @@ void DMA2_Stream2_IRQHandler(void)
 void ETH_IRQHandler(void)
 {
   /* USER CODE BEGIN ETH_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END ETH_IRQn 0 */
   HAL_ETH_IRQHandler(&heth);
   /* USER CODE BEGIN ETH_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END ETH_IRQn 1 */
 }
 
@@ -314,11 +322,11 @@ void ETH_IRQHandler(void)
 void DMA2_Stream7_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA2_Stream7_IRQn 0 */
-
+  TRACE_ISR_ENTER();
   /* USER CODE END DMA2_Stream7_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart1_tx);
   /* USER CODE BEGIN DMA2_Stream7_IRQn 1 */
-
+  TRACE_ISR_EXIT();
   /* USER CODE END DMA2_Stream7_IRQn 1 */
 }
 

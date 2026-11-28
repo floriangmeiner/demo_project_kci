@@ -167,9 +167,14 @@ Why `linkTask` is separate from `defaultTask`:
 | Total stacks         | 20,480      | 20,480              | Before task control blocks and queues |
 | FreeRTOS heap        | 32,768      | 32,768              | `configTOTAL_HEAP_SIZE`, in the FreeRTOS settings in CubeMX |
 
-The heap has room for every thread. About 12 KB is left for task control blocks,
-queues and lwIP's mailboxes. This is a calculation, so confirm it with
-`xPortGetFreeHeapSize` once everything is running.
+The heap has room for every thread. The calculation above left about 12 KB for
+task control blocks, queues and lwIP's mailboxes. **Measured on Nov 27:**
+10,952 bytes free once everything is running, with the lowest free value also
+10,952 bytes, steady over 160 s, so nothing leaks. The calculation left out
+heap_4's overhead per allocation and the queues lwIP creates. SystemView plots
+both values; see [Plotting
+values](tracing_systemview.md#plotting-values). Measure again once the link
+and CANopen code run, since they'll allocate more.
 
 The idle and timer task stacks aren't counted, because they're allocated
 statically.

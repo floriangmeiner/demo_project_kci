@@ -29,6 +29,7 @@ questions.
 | [To do](TODO.md)                                                            | Outstanding questions and unfinished setup work           |
 | [Build system](documentation/build_system.md)                               | Build and flash commands, tools, outputs and CubeMX regeneration |
 | [Build dependency map](documentation/build_dependency_map.md)               | Charts of how the makefiles, targets, files and variables connect |
+| [Tracing with SystemView](documentation/tracing_systemview.md)              | Recording threads and interrupts, logging, plotting and timing with SEGGER SystemView |
 | [Boot](documentation/system_boot.md)                                               | The three programs, slots A and B, and boot checks        |
 | [Cryptography](documentation/system_cryptography.md)                               | What each cryptographic technique does and why it's used  |
 | [Memory](documentation/system_memory.md)                                           | Flash and RAM layout, and where keys and images live      |

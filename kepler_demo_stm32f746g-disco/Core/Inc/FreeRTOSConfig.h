@@ -155,6 +155,18 @@ standard names. */
 
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
+
+/* SEGGER SystemView: record FreeRTOS events through its trace hooks.
+ * FW_SYSVIEW is set by our makefiles (app/Makefile); CubeMX's own Makefile
+ * doesn't set it, so that build stays as generated. The idle task handle
+ * lets SystemView show idle time as idle. See
+ * documentation/tracing_systemview.md. */
+#if defined(FW_SYSVIEW) && (FW_SYSVIEW == 1)
+#define INCLUDE_xTaskGetIdleTaskHandle 1
+#if !defined(__ASSEMBLER__)
+#include "SEGGER_SYSVIEW_FreeRTOS.h"
+#endif
+#endif
 /* USER CODE END Defines */
 
 #endif /* FREERTOS_CONFIG_H */

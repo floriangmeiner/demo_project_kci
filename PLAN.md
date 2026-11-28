@@ -398,8 +398,11 @@ Rules:
       Done Nov 27, plus `mk/cube.mk`, which reads the generated Makefile's
       file lists. The flash image is byte-for-byte identical to CubeMX's
       build. See [build_system.md](documentation/build_system.md).
-- [ ] Print logs over SEGGER RTT: build `vendors/segger/rtt/`, add
-      `app/inc/log.h`, and print a boot line with the firmware version.
+- [x] Trace and log with SEGGER SystemView, with RTT as its transport. Done
+      Nov 27: FreeRTOS events, eight traced interrupts, `LOG()` messages,
+      heap plots and the `git describe` version, recorded on the board from
+      boot, with no overflows during a ping. A ping takes about 210 µs on the
+      board. See [tracing_systemview.md](documentation/tracing_systemview.md).
 - [ ] Check the MPU on the board: a normal boot first, then the deliberate
       violation tests in a debug build. The normal boot passed Nov 26: LD1
       blinks, all eight threads run, and `fault_record` is all zeros. See
@@ -730,6 +733,14 @@ When applying, use the posting's title: "Embedded Software Designer".
 
 ## Change log
 
+- **Nov 27, 2026:** Chose SEGGER SystemView over plain RTT logging, for its
+  timeline of threads and interrupts, and added it: FreeRTOS trace hooks,
+  eight traced interrupts, `LOG()` messages, heap plots, timing markers and
+  the `git describe` version. `make FW_SYSVIEW=0` removes it all. SEGGER's
+  FreeRTOS kernel patch isn't used, because it doesn't fit V10.2.0 or the
+  Cortex-M7 port. Recorded on the board the same day. Starting the recording
+  in the firmware lets SystemView show start-up; it has to wait until the
+  scheduler runs, because an earlier start stopped the board.
 - **Nov 27, 2026:** Added our own makefiles: a top-level `Makefile`,
   `mk/cube.mk`, `mk/common.mk` and `app/Makefile`, with output in `build/app/`.
   They read the CubeMX Makefile's file lists instead of copying them, so the

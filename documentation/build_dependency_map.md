@@ -67,16 +67,22 @@ flowchart LR
 flowchart LR
   subgraph IN["Inputs"]
     CS["125 CubeMX .c files<br/>HAL, FreeRTOS, lwIP, Core/Src"]
-    APS["app/src/*.c<br/>none yet"]
+    APS["app/src/*.c<br/>trace.c"]
+    SG["SEGGER submodules<br/>SEGGER_RTT.c, SEGGER_SYSVIEW.c,<br/>SEGGER_SYSVIEW_FreeRTOS.c"]
+    SGS["SEGGER_RTT_ASM_ARMv7M.S"]
     AS["startup_stm32f746xx.s"]
-    H["Headers<br/>tracked through .d files"]
+    H["Headers, including app/config/<br/>tracked through .d files"]
+    VER["build/app/gen/fw_version.h<br/>from git describe"]
     MK["4 makefiles<br/>app/Makefile, mk/cube.mk,<br/>mk/common.mk, generated Makefile"]
     LD["STM32F746xx_FLASH.ld<br/>linker script"]
   end
   CS --> CO["obj/**/*.c.o"]
   APS --> CO
+  SG --> CO
   H --> CO
-  AS --> SO["obj/**/*.s.o"]
+  VER --> CO
+  AS --> SO["obj/**/*.s.o, *.S.o"]
+  SGS --> SO
   MK --> CO
   MK --> SO
   CO --> E["kepler_demo_app.elf<br/>+ .map + memory report"]
@@ -88,6 +94,10 @@ flowchart LR
   E --> OZ["Ozone project"]
   BIN --> LATER["Later: signing and TFTP updates"]
 ```
+
+- **The SEGGER sources are only built when `FW_SYSVIEW` is 1,** the default.
+  `fw_version.h` is only included by `trace.c`, so a new version rebuilds just
+  that file.
 
 - **Each arrow is a dependency make checks.** If anything on the left is newer
   than what it points to, make rebuilds the target and everything after it.
@@ -122,8 +132,12 @@ flowchart LR
   end
   subgraph APPMK["app/Makefile"]
     APP_C["APP_C<br/>app/src/*.c"]
+    FW_SYSVIEW["FW_SYSVIEW<br/>1 by default"]
+    SEGGER_SRC["SEGGER_SRC<br/>RTT and SystemView sources"]
+    SEGGER_INC["SEGGER_INC<br/>app/config first, then the submodules"]
+    FW_DEFS["FW_DEFS<br/>-DFW_SYSVIEW"]
     SRCS
-    INCLUDES
+    INCLUDES["INCLUDES<br/>+ app/inc, build/app/gen"]
     LDSCRIPT_FILE
   end
   subgraph COMMON["mk/common.mk"]
@@ -136,6 +150,9 @@ flowchart LR
   C_SOURCES --> CUBE_C --> SRCS
   ASM_SOURCES --> CUBE_ASM --> SRCS
   APP_C --> SRCS
+  FW_SYSVIEW --> SEGGER_SRC --> SRCS
+  FW_SYSVIEW --> SEGGER_INC --> INCLUDES
+  FW_SYSVIEW --> FW_DEFS --> FW_COMMON
   C_INCLUDES --> CUBE_INC --> INCLUDES
   C_DEFS --> CUBE_DEFS --> FW_COMMON
   MCU --> CUBE_MCU --> FW_COMMON
@@ -152,8 +169,11 @@ flowchart LR
 - **Only seven variables cross over from CubeMX.** Everything else in the
   generated Makefile, such as its `CFLAGS`, `LDFLAGS` and `BUILD_DIR`, is
   ignored.
-- **`FW_WARN`** is empty for CubeMX files and `-Wextra` for files under `app/`,
-  set by a pattern-specific variable in `app/Makefile`.
+- **`FW_WARN`** is empty for CubeMX and SEGGER files and `-Wextra` for files
+  under `app/`, set by a pattern-specific variable in `app/Makefile`.
+- **`FW_SYSVIEW`** decides three things at once: whether the SEGGER sources
+  are built, whether their include folders are used, and, through
+  `-DFW_SYSVIEW`, whether the hooks in CubeMX's files are compiled in.
 
 ## What makes make rebuild
 
@@ -166,4 +186,6 @@ flowchart LR
 | CubeMX Generate Code | Everything | It rewrites the generated Makefile, one of the four |
 | A new file in `app/src/` | That object, then the link | `APP_C` finds it with a wildcard |
 | The root `Makefile` | Nothing | It only starts the sub-make and runs tools |
-| **Only a flag on the command line, such as `FW_OPT=-O2`** | **Nothing** | Make tracks files, not flags. Run `make clean` first. Fixing this is part of the deferred variants plan in [TODO.md](../TODO.md#build) |
+| A new commit, or uncommitted changes appearing or going | `trace.c`, then the link | The version changes, so `fw_version.h` is rewritten |
+| A SEGGER submodule moved to another tag | The SEGGER files that changed, and every file including a changed SEGGER header | Its sources and headers are dependencies like any others |
+| **Only a flag on the command line, such as `FW_OPT=-O2` or `FW_SYSVIEW=0`** | **Nothing** | Make tracks files, not flags. Run `make clean` first. Fixing this is part of the deferred variants plan in [TODO.md](../TODO.md#build) |
